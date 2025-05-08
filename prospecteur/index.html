@@ -516,11 +516,26 @@
           if (!response.ok) {
             throw new Error('Erreur lors du chargement des entreprises');
           }
-          const fetchedEnterprises = await response.json(); // Use a different name to avoid conflict with global
-          enterprises = fetchedEnterprises; // Assign to the global variable
-          window.loadedEnterprises = enterprises; // Store for global access
           
-          // Sorting and grouping will be handled by setupEnterpriseSelector
+          const data = await response.json();
+          console.log("Données brutes de l'API:", data);
+          
+          // Extraire le tableau d'entreprises en fonction du format de réponse
+          let fetchedEnterprises = [];
+          
+          if (Array.isArray(data)) {
+            fetchedEnterprises = data;
+          } else if (data.enterprises && Array.isArray(data.enterprises)) {
+            fetchedEnterprises = data.enterprises;
+          } else if (data.json && Array.isArray(data.json)) {
+            fetchedEnterprises = data.json;
+          } else if (data.data && Array.isArray(data.data)) {
+            fetchedEnterprises = data.data;
+          }
+          
+          console.log("Entreprises extraites:", fetchedEnterprises);
+          enterprises = fetchedEnterprises; // Assigner à la variable locale
+          window.loadedEnterprises = fetchedEnterprises; // Stocker pour accès global
           
         } catch (error) {
           console.error('Erreur:', error);
@@ -540,6 +555,8 @@
         const searchInput = document.getElementById('entreprise-search');
         const resultsContainer = document.getElementById('entreprise-results');
         const hiddenInput = document.getElementById('entreprise');
+        
+        console.log("Configuration du sélecteur d'entreprises avec", enterprises.length, "entreprises");
         
         // Grouper les entreprises par commune
         const groupedEnterprises = {};
@@ -581,6 +598,7 @@
               option.textContent = enterprise.nom_entreprise;
               option.dataset.id = enterprise.id;
               option.addEventListener('click', () => {
+                console.log("Entreprise sélectionnée:", enterprise);
                 hiddenInput.value = enterprise.id;
                 searchInput.value = enterprise.nom_entreprise;
                 resultsContainer.classList.remove('active');
@@ -639,14 +657,13 @@
       const setupFormSubmission = () => {
         const form = document.getElementById('prospecteur-form');
         
-        // Modification à apporter à votre code de gestion du formulaire
         form.addEventListener('submit', async function(event) {
           event.preventDefault();
           
           // Désactiver le bouton de soumission
           const submitButton = document.getElementById('submit-button');
           submitButton.disabled = true;
-          submitButton.innerHTML = '<span class="loader"></span> Traitement en cours...'; // Using .loader for consistency
+          submitButton.innerHTML = '<span class="loader"></span> Traitement en cours...';
           
           // Collecter les données du formulaire
           const formData = new FormData(this);
@@ -655,21 +672,44 @@
             formObject[key] = value;
           });
           
+          console.log("Données initiales du formulaire:", formObject);
+          
           // IMPORTANT: Enrichir les données avec l'information complète de l'entreprise
           const entrepriseId = formObject.entreprise;
-          if (entrepriseId && !formObject.nouvelle_entreprise) {
-            // Rechercher l'entreprise dans la liste chargée
-            const selectedEnterprise = window.loadedEnterprises.find(e => e.id == entrepriseId);
+          console.log("ID entreprise sélectionnée:", entrepriseId);
+          console.log("Nouvelle entreprise checkbox:", formObject.nouvelle_entreprise);
+          
+          if (entrepriseId && formObject.nouvelle_entreprise !== 'on') {
+            console.log("Tentative d'enrichissement des données d'entreprise");
+            
+            // Vérifier si les entreprises sont chargées
+            const enterprises = window.loadedEnterprises || [];
+            console.log("Entreprises disponibles:", enterprises.length);
+            
+            // Utilisation de String() pour comparer correctement les IDs
+            const selectedEnterprise = enterprises.find(e => String(e.id) === String(entrepriseId));
+            console.log("Entreprise trouvée:", selectedEnterprise);
+            
             if (selectedEnterprise) {
-              formObject.entreprise_nom = selectedEnterprise.nom_entreprise;
-              formObject.entreprise_commune = selectedEnterprise.commune;
+              // Extraction de la valeur de commune (qui peut être un objet ou une chaîne)
+              const commune = typeof selectedEnterprise.commune === 'object' && selectedEnterprise.commune !== null 
+                ? selectedEnterprise.commune.value || '' 
+                : selectedEnterprise.commune || '';
+              
+              // Ajout des champs enrichis
+              formObject.entreprise_nom = selectedEnterprise.nom_entreprise || '';
+              formObject.entreprise_commune = commune;
               formObject.entreprise_adresse = selectedEnterprise.adresse || '';
-              formObject.entreprise_telephone = selectedEnterprise.telephone || '';
+              formObject.entreprise_telephone = selectedEnterprise.telephone || selectedEnterprise.portable || '';
               formObject.entreprise_email = selectedEnterprise.email || '';
+              
+              console.log("Données enrichies:", formObject);
             }
           }
           
           try {
+            console.log("Données envoyées au webhook:", JSON.stringify(formObject));
+            
             // Envoyer les données au webhook n8n
             const response = await fetch('https://n8n.aspchcrm.fr/webhook/prospecteur-inscription', {
               method: 'POST',
@@ -683,6 +723,8 @@
               throw new Error('Erreur lors de l\'envoi du formulaire');
             }
             
+            console.log("Réponse du webhook:", await response.json().catch(() => ({})));
+            
             // Afficher la confirmation
             document.getElementById('prospecteur-form').style.display = 'none';
             document.getElementById('confirmation').style.display = 'block';
@@ -695,16 +737,14 @@
             submitButton.innerHTML = 'CONFIRMER MA PARTICIPATION';
             
             // Fallback Netlify Forms si nécessaire...
-            // Note: The original Netlify fallback logic can be kept or adapted as needed.
-            // For this example, I'm keeping it similar to the original fallback.
             const netlifyForm = document.createElement('form');
             netlifyForm.method = 'POST';
-            netlifyForm.action = '/'; // Assuming Netlify handles submissions to the root
+            netlifyForm.action = '/';
             netlifyForm.setAttribute('data-netlify', 'true');
-            netlifyForm.setAttribute('name', 'prospecteur-form'); // Ensure this matches your Netlify form name
+            netlifyForm.setAttribute('name', 'prospecteur-form');
             
             Object.keys(formObject).forEach(key => {
-              if (key !== 'form-name' && key !== 'bot-field') { // Standard Netlify hidden fields
+              if (key !== 'form-name' && key !== 'bot-field') {
                 const input = document.createElement('input');
                 input.type = 'hidden';
                 input.name = key;
@@ -713,16 +753,13 @@
               }
             });
             
-            // Add the form-name field for Netlify
+            // Ajouter le champ form-name pour Netlify
             const formNameInput = document.createElement('input');
             formNameInput.type = 'hidden';
             formNameInput.name = 'form-name';
-            formNameInput.value = 'prospecteur-form'; // Must match the form's name attribute
+            formNameInput.value = 'prospecteur-form';
             netlifyForm.appendChild(formNameInput);
-
-            // It's generally better to alert the user or log, rather than auto-submitting a fallback
-            // without user interaction after an error. Consider user experience here.
-            // For now, replicating the previous fallback:
+            
             document.body.appendChild(netlifyForm);
             netlifyForm.submit();
           }
