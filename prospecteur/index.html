@@ -229,6 +229,67 @@
         padding: 15px;
       }
     }
+
+    /* Styles for new enterprise selector */
+    .select-search-container {
+      position: relative;
+      width: 100%;
+    }
+
+    .select-search-input {
+      width: 100%;
+      padding: 12px 15px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 16px;
+      transition: all 0.3s;
+    }
+
+    .select-search-input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(69, 123, 157, 0.2);
+      outline: none;
+    }
+
+    .select-results {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background: white;
+      border: 1px solid #ddd;
+      border-radius: 0 0 6px 6px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      max-height: 300px;
+      overflow-y: auto;
+      z-index: 100;
+      display: none;
+    }
+
+    .select-results.active {
+      display: block;
+    }
+
+    .select-group-header {
+      background-color: var(--secondary);
+      color: white;
+      padding: 8px 15px;
+      font-weight: bold;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .select-option {
+      padding: 10px 15px;
+      cursor: pointer;
+      border-bottom: 1px solid #f0f0f0;
+      transition: all 0.2s;
+    }
+
+    .select-option:hover {
+      background-color: var(--light);
+    }
   </style>
 </head>
 <body>
@@ -282,27 +343,15 @@
       <div class="form-section">
         <div class="section-title">ATTRIBUTION DE PROSPECT</div>
         
-        <!-- Champ de recherche d'entreprise -->
-        <div class="form-row">
-          <label for="entreprise-search">Rechercher une entreprise</label>
-          <div class="search-container">
-            <span class="search-icon">🔍</span>
-            <input 
-              type="text" 
-              id="entreprise-search" 
-              class="search-input" 
-              placeholder="Commencez à taper le nom d'une entreprise..."
-              autocomplete="off"
-            >
-          </div>
-        </div>
-        
         <div class="form-row">
           <label for="entreprise">Choisir une entreprise *</label>
-          <select id="entreprise" name="entreprise" required>
-            <option value="">-- Sélectionnez une entreprise --</option>
-            <!-- Options chargées dynamiquement -->
-          </select>
+          <div class="select-search-container">
+            <input type="text" id="entreprise-search" placeholder="Tapez pour rechercher une entreprise..." class="select-search-input">
+            <div class="select-results" id="entreprise-results">
+              <!-- Les résultats de recherche s'afficheront ici -->
+            </div>
+            <input type="hidden" id="entreprise" name="entreprise" required>
+          </div>
           <div id="loading-enterprises" style="display: none;"><span class="loader"></span> Chargement des entreprises...</div>
           <div class="error-message" id="entreprise-error">Veuillez sélectionner une entreprise</div>
         </div>
@@ -380,6 +429,7 @@
   
   <script>
     document.addEventListener('DOMContentLoaded', function() {
+      let enterprises = []; // To store fetched enterprise data
       // Liste préchargée des communes (générée via votre API get-communes)
       const COMMUNES = [
         "ADISSAN",
@@ -456,7 +506,6 @@
       // Charger les entreprises
       const loadEnterprises = async () => {
         const loadingIndicator = document.getElementById('loading-enterprises');
-        const selectElement = document.getElementById('entreprise');
         
         try {
           // Afficher l'indicateur de chargement
@@ -467,103 +516,100 @@
           if (!response.ok) {
             throw new Error('Erreur lors du chargement des entreprises');
           }
-          const enterprises = await response.json();
+          const fetchedEnterprises = await response.json(); // Use a different name to avoid conflict with global
+          enterprises = fetchedEnterprises; // Assign to the global variable
           
-          // Trier les entreprises par commune puis par nom
-          enterprises.sort((a, b) => {
-            if (a.commune !== b.commune) {
-              return a.commune.localeCompare(b.commune);
-            }
-            return a.nom_entreprise.localeCompare(b.nom_entreprise);
-          });
-          
-          // Grouper par commune
-          let currentCommune = '';
-          
-          enterprises.forEach(enterprise => {
-            // Si on change de commune, ajouter un groupe optgroup
-            if (enterprise.commune !== currentCommune) {
-              currentCommune = enterprise.commune;
-              const optgroup = document.createElement('optgroup');
-              optgroup.label = currentCommune;
-              selectElement.appendChild(optgroup);
-            }
-            
-            // Ajouter l'option dans le dernier optgroup
-            const option = document.createElement('option');
-            option.value = enterprise.id;
-            option.textContent = enterprise.nom_entreprise;
-            selectElement.lastChild.appendChild(option);
-          });
+          // Sorting and grouping will be handled by setupEnterpriseSelector
           
         } catch (error) {
           console.error('Erreur:', error);
-          
-          // Fallback en cas d'erreur
-          const option = document.createElement('option');
-          option.value = "error";
-          option.textContent = "Erreur de chargement - veuillez réessayer plus tard";
-          selectElement.appendChild(option);
-          
+          // Optionally, display an error message to the user in the new results container
+          const resultsContainer = document.getElementById('entreprise-results');
+          if (resultsContainer) {
+            resultsContainer.innerHTML = '<div class="select-option" style="font-style: italic; color: #999;">Erreur de chargement des entreprises.</div>';
+            resultsContainer.classList.add('active');
+          }
         } finally {
           // Masquer l'indicateur de chargement
           loadingIndicator.style.display = 'none';
         }
       };
-      
-      // Fonction de recherche d'entreprise améliorée
-      const setupEnterpriseSearch = () => {
+
+      function setupEnterpriseSelector() {
         const searchInput = document.getElementById('entreprise-search');
-        const selectElement = document.getElementById('entreprise');
-  
-        searchInput.addEventListener('input', function() {
-          const searchTerm = this.value.toLowerCase().trim();
-          console.log('Recherche de:', searchTerm); // Débogage
-    
-          // Si le champ est vide, restaurer toutes les options
-          if (searchTerm === '') {
-            const allOptions = selectElement.querySelectorAll('option');
-            const allOptgroups = selectElement.querySelectorAll('optgroup');
-      
-            allOptions.forEach(option => {
-              option.style.display = '';
-            });
-      
-            allOptgroups.forEach(optgroup => {
-            optgroup.style.display = '';
-            });
-      
-            return;
+        const resultsContainer = document.getElementById('entreprise-results');
+        const hiddenInput = document.getElementById('entreprise');
+        
+        // Grouper les entreprises par commune
+        const groupedEnterprises = {};
+        enterprises.forEach(enterprise => {
+          const commune = enterprise.commune || 'Autre';
+          if (!groupedEnterprises[commune]) {
+            groupedEnterprises[commune] = [];
           }
-    
-          const optgroups = selectElement.querySelectorAll('optgroup');
-    
-          // Parcourir tous les groupes (communes)
-          optgroups.forEach(optgroup => {
-            let hasVisibleOptions = false;
-            const options = optgroup.querySelectorAll('option');
-      
-            // Vérifier chaque option dans le groupe
-            options.forEach(option => {
-              if (option.value === '') return; // Ignorer l'option "Sélectionnez une entreprise"
+          groupedEnterprises[commune].push(enterprise);
+        });
         
-              const optionText = option.textContent.toLowerCase();
-              const isMatch = optionText.includes(searchTerm);
-        
-              // Afficher/masquer l'option selon la correspondance
-              if (isMatch) {
-                option.style.display = '';
-          hasVisibleOptions = true;
-        } else {
-          option.style.display = 'none';
+        // Fonction pour afficher les résultats filtrés
+        function displayResults(searchTerm = '') {
+          resultsContainer.innerHTML = '';
+          resultsContainer.classList.add('active');
+          
+          const searchLower = searchTerm.toLowerCase();
+          
+          // Trier les communes alphabétiquement
+          const sortedCommunes = Object.keys(groupedEnterprises).sort();
+          
+          sortedCommunes.forEach(commune => {
+            const matchingEnterprises = groupedEnterprises[commune].filter(
+              enterprise => enterprise.nom_entreprise.toLowerCase().includes(searchLower)
+            );
+            
+            if (matchingEnterprises.length === 0) return;
+            
+            // Créer l'en-tête de groupe (commune)
+            const groupHeader = document.createElement('div');
+            groupHeader.className = 'select-group-header';
+            groupHeader.textContent = commune;
+            resultsContainer.appendChild(groupHeader);
+            
+            // Ajouter les entreprises de cette commune
+            matchingEnterprises.forEach(enterprise => {
+              const option = document.createElement('div');
+              option.className = 'select-option';
+              option.textContent = enterprise.nom_entreprise;
+              option.dataset.id = enterprise.id;
+              option.addEventListener('click', () => {
+                hiddenInput.value = enterprise.id;
+                searchInput.value = enterprise.nom_entreprise;
+                resultsContainer.classList.remove('active');
+              });
+              resultsContainer.appendChild(option);
+            });
+          });
+          
+          // Afficher un message si aucun résultat
+          if (resultsContainer.children.length === 0) {
+            const noResults = document.createElement('div');
+            noResults.className = 'select-option';
+            noResults.textContent = 'Aucun résultat trouvé';
+            noResults.style.fontStyle = 'italic';
+            noResults.style.color = '#999';
+            resultsContainer.appendChild(noResults);
+          }
         }
-      });
-      
-      // Masquer le groupe entier si aucune entreprise ne correspond
-      optgroup.style.display = hasVisibleOptions ? '' : 'none';
-    });
-  });
-};
+        
+        // Événements
+        searchInput.addEventListener('focus', () => displayResults(searchInput.value));
+        searchInput.addEventListener('input', () => displayResults(searchInput.value));
+        
+        // Fermer le menu quand on clique ailleurs
+        document.addEventListener('click', (e) => {
+          if (!searchInput.contains(e.target) && !resultsContainer.contains(e.target)) {
+            resultsContainer.classList.remove('active');
+          }
+        });
+      }
       
       // Gestion de l'affichage conditionnel
       const setupConditionalDisplay = () => {
@@ -675,7 +721,7 @@
       // Initialisation
       populateCommunes();
       loadEnterprises().then(() => {
-        setupEnterpriseSearch();
+        setupEnterpriseSelector();
       });
       setupConditionalDisplay();
       setupFormSubmission();
