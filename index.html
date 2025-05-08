@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Renouvellement Calendrier 2026 - Sapeurs-Pompiers Clermont l'Hérault</title>
+  <style>
+    :root {
+      --primary: #e63946;
+      --secondary: #1d3557;
+      --light: #f1faee;
+      --accent: #457b9d;
+      --white: #ffffff;
+    }
+    body {
+      font-family: Arial, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      background-color: #f5f5f5;
+      margin: 0;
+      padding: 0;
+    }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    header {
+      display: flex;
+      align-items: center;
+      margin-bottom: 20px;
+      border-bottom: 3px solid var(--primary);
+      padding-bottom: 15px;
+    }
+    .logo {
+      width: 80px;
+      margin-right: 20px;
+    }
+    h1, h2, h3 {
+      color: var(--secondary);
+      margin-top: 0;
+    }
+    h1 {
+      margin-bottom: 5px;
+      font-size: 24px;
+    }
+    .subtitle {
+      color: var(--primary);
+      font-weight: bold;
+      margin: 0;
+    }
+    .intro {
+      background-color: var(--light);
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      border-left: 4px solid var(--accent);
+    }
+    .form-section {
+      background-color: var(--light);
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      border-left: 4px solid var(--accent);
+    }
+    .section-title {
+      display: inline-block;
+      background-color: var(--secondary);
+      color: white;
+      padding: 8px 15px;
+      border-radius: 4px;
+      margin-bottom: 15px;
+      font-size: 16px;
+    }
+    .form-row {
+      margin-bottom: 15px;
+    }
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+    input[type="text"], 
+    input[type="email"],
+    input[type="tel"],
+    select,
+    textarea {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 16px;
+      box-sizing: border-box;
+    }
+    .price-options {
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 15px;
+      margin: 20px 0;
+    }
+    .price-option {
+      flex: 1;
+      min-width: 180px;
+      border: 2px solid #ddd;
+      border-radius: 8px;
+      padding: 15px;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.3s;
+    }
+    .price-option:hover {
+      border-color: var(--accent);
+      transform: translateY(-3px);
+    }
+    .price-option.selected {
+      border-color: var(--primary);
+      background-color: rgba(230, 57, 70, 0.1);
+    }
+    .price {
+      font-size: 22px;
+      font-weight: bold;
+      color: var(--primary);
+      margin: 10px 0;
+    }
+    .format-desc {
+      font-size: 14px;
+      color: #666;
+    }
+    .month-selector {
+      margin: 20px 0;
+    }
+    .month-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .month-btn {
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.2s;
+    }
+    .month-btn:hover {
+      background-color: #f0f0f0;
+    }
+    .month-btn.selected {
+      background-color: var(--primary);
+      color: white;
+      border-color: var(--primary);
+    }
+    .submit-btn {
+      background-color: var(--primary);
+      color: white;
+      border: none;
+      padding: 12px 25px;
+      font-size: 18px;
+      border-radius: 6px;
+      cursor: pointer;
+      margin-top: 20px;
+      width: 100%;
+      font-weight: bold;
+      transition: background-color 0.2s;
+    }
+    .submit-btn:hover {
+      background-color: #d1282e;
+    }
+    .data-policy {
+      font-size: 12px;
+      color: #666;
+      margin-top: 20px;
+      padding-top: 15px;
+      border-top: 1px solid #eee;
+    }
+    .confirmation {
+      text-align: center;
+      padding: 50px 20px;
+      background-color: var(--light);
+      border-radius: 8px;
+      margin-top: 20px;
+      display: none;
+    }
+    .confirmation h2 {
+      color: var(--secondary);
+    }
+    .confirmation-icon {
+      font-size: 60px;
+      color: var(--primary);
+      margin-bottom: 20px;
+    }
+    .error-message {
+      color: var(--primary);
+      font-size: 14px;
+      display: none;
+      margin-top: 5px;
+    }
+    .hidden {
+      display: none;
+    }
+    .previous-choice {
+      background-color: #fff8e1;
+      border-left: 4px solid #ffc107;
+      padding: 10px 15px;
+      margin-bottom: 15px;
+      border-radius: 4px;
+    }
+    .loader {
+      display: none;
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid var(--primary);
+      border-radius: 50%;
+      width: 30px;
+      height: 30px;
+      animation: spin 2s linear infinite;
+      margin: 20px auto;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    @media (max-width: 768px) {
+      .price-options {
+        flex-direction: column;
+      }
+      .month-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <img src="https://n8n.aspchcrm.fr/files/Logo_pompiers.png" alt="Logo Sapeurs-Pompiers" class="logo">
+      <div>
+        <h1>Calendrier 2026 - Sapeurs-Pompiers de Clermont l'Hérault</h1>
+        <p class="subtitle">Formulaire de renouvellement</p>
+      </div>
+    </header>
+    
+    <div class="intro">
+      <h2>Merci pour votre soutien en 2025 !</h2>
+      <p>Nous préparons notre calendrier 2026 et serions ravis de compter à nouveau sur votre participation. Ce formulaire vous permet de renouveler facilement votre encart publicitaire.</p>
+    </div>
+    
+    <form id="renewal-form" name="calendrier-2026" method="POST" data-netlify="true" netlify-honeypot="bot-field">
+      <!-- Champs cachés pour Netlify -->
+      <input type="hidden" name="form-name" value="calendrier-2026">
+      <p class="hidden">
+        <label>Ne pas remplir si vous êtes humain: <input name="bot-field"></label>
+      </p>
+      
+      <input type="hidden" id="entrepriseId" name="entrepriseId">
+      
+      <div class="form-section">
+        <div class="section-title">DONNÉES ENTREPRISE</div>
+        <div class="form-row">
+          <label for="nom_entreprise">Nom de l'entreprise</label>
+          <input type="text" id="nom_entreprise" name="nom_entreprise" readonly>
+        </div>
+        <div class="form-row">
+          <label for="interlocuteur">Nom de l'interlocuteur</label>
+          <input type="text" id="interlocuteur" name="interlocuteur" required>
+        </div>
+        <div class="form-row">
+          <label for="email">Email de contact</label>
+          <input type="email" id="email" name="email" required>
+        </div>
+        <div class="form-row">
+          <label for="telephone">Téléphone</label>
+          <input type="tel" id="telephone" name="telephone">
+        </div>
+      </div>
+      
+      <div class="form-section">
+        <div class="section-title">VOTRE INSERTION 2026</div>
+        <div class="previous-choice">
+          <p>En 2025, vous avez choisi le format <strong id="format-precedent"></strong> pour le mois de <strong id="mois-precedent"></strong>.</p>
+        </div>
+        
+        <div class="price-options">
+          <div class="price-option" data-format="6X4" onclick="selectFormat('6X4')">
+            <h3>Format 6X4cm</h3>
+            <div class="price">350€</div>
+            <div class="format-desc">Format carte de visite</div>
+          </div>
+          <div class="price-option" data-format="6X8" onclick="selectFormat('6X8')">
+            <h3>Format 6X8cm</h3>
+            <div class="price">500€</div>
+            <div class="format-desc">Visibilité améliorée</div>
+          </div>
+          <div class="price-option" data-format="12X4" onclick="selectFormat('12X4')">
+            <h3>Format 12X4cm</h3>
+            <div class="price">500€</div>
+            <div class="format-desc">Format bandeau</div>
+          </div>
+          <div class="price-option" data-format="12PARUTIONS" onclick="selectFormat('12PARUTIONS')">
+            <h3>12 Parutions</h3>
+            <div class="price">1800€</div>
+            <div class="format-desc">Format 6x4 toute l'année</div>
+          </div>
+        </div>
+        <input type="hidden" id="format_encart" name="format_encart" required>
+        <div class="error-message" id="format-error">Veuillez sélectionner un format d'encart</div>
+        
+        <div id="section-mois" class="month-selector">
+          <label>Choisissez le mois de parution souhaité</label>
+          <div class="month-grid">
+            <div class="month-btn" data-month="Janvier" onclick="selectMonth('Janvier')">Janvier</div>
+            <div class="month-btn" data-month="Février" onclick="selectMonth('Février')">Février</div>
+            <div class="month-btn" data-month="Mars" onclick="selectMonth('Mars')">Mars</div>
+            <div class="month-btn" data-month="Avril" onclick="selectMonth('Avril')">Avril</div>
+            <div class="month-btn" data-month="Mai" onclick="selectMonth('Mai')">Mai</div>
+            <div class="month-btn" data-month="Juin" onclick="selectMonth('Juin')">Juin</div>
+            <div class="month-btn" data-month="Juillet" onclick="selectMonth('Juillet')">Juillet</div>
+            <div class="month-btn" data-month="Août" onclick="selectMonth('Août')">Août</div>
+            <div class="month-btn" data-month="Septembre" onclick="selectMonth('Septembre')">Septembre</div>
+            <div class="month-btn" data-month="Octobre" onclick="selectMonth('Octobre')">Octobre</div>
+            <div class="month-btn" data-month="Novembre" onclick="selectMonth('Novembre')">Novembre</div>
+            <div class="month-btn" data-month="Décembre" onclick="selectMonth('Décembre')">Décembre</div>
+          </div>
+          <input type="hidden" id="mois_parution" name="mois_parution" required>
+          <div class="error-message" id="month-error">Veuillez sélectionner un mois de parution</div>
+        </div>
+        
+        <div class="form-row">
+          <label for="commentaire">Commentaires ou instructions spéciales</label>
+          <textarea id="commentaire" name="commentaire" rows="3"></textarea>
+        </div>
+      </div>
+      
+      <button type="submit" class="submit-btn">CONFIRMER MA PARTICIPATION</button>
+      <div class="loader" id="submit-loader"></div>
+      
+      <div class="data-policy">
+        En soumettant ce formulaire, vous acceptez que les informations saisies soient utilisées par l'Amicale des Sapeurs-Pompiers de Clermont l'Hérault dans le cadre de votre participation au calendrier 2026.
+      </div>
+    </form>
+    
+    <div class="confirmation" id="confirmation">
+      <div class="confirmation-icon">✓</div>
+      <h2>Participation confirmée !</h2>
+      <p>Merci de votre soutien aux Sapeurs-Pompiers de Clermont l'Hérault.</p>
+      <p>Un bon de commande vous sera envoyé par email dans les plus brefs délais.</p>
+    </div>
+  </div>
+  
+  <script>
+    // Fonction pour récupérer les paramètres de l'URL
+    function getUrlParams() {
+      const params = {};
+      const queryString = window.location.search;
+      const urlParams = new URLSearchParams(queryString);
+      
+      params.id = urlParams.get('id') || '';
+      params.format = urlParams.get('format') || '6X4';
+      params.mois = urlParams.get('mois') || 'Janvier';
+      params.nom = urlParams.get('nom') || '';
+      params.interlocuteur = urlParams.get('interlocuteur') || '';
+      params.email = urlParams.get('email') || '';
+      params.telephone = urlParams.get('telephone') || '';
+      
+      console.log('Paramètres extraits de l\'URL :', params);
+      return params;
+    }
+    
+    // Fonction pour pré-remplir le formulaire
+    function prefillForm() {
+      try {
+        const params = getUrlParams();
+        
+        // Pré-remplir l'ID de l'entreprise
+        const entrepriseIdField = document.getElementById('entrepriseId');
+        if (entrepriseIdField) {
+          entrepriseIdField.value = params.id;
+          console.log('Champ entrepriseId rempli avec :', params.id);
+        }
+        
+        // Pré-remplir le nom de l'entreprise
+        const nomField = document.getElementById('nom_entreprise');
+        if (nomField) {
+          nomField.value = decodeURIComponent(params.nom);
+          console.log('Champ nom_entreprise rempli avec :', decodeURIComponent(params.nom));
+        }
+        
+        // Pré-remplir les autres champs
+        const interlocuteurField = document.getElementById('interlocuteur');
+        if (interlocuteurField) {
+          interlocuteurField.value = decodeURIComponent(params.interlocuteur || '');
+          console.log('Champ interlocuteur rempli avec :', decodeURIComponent(params.interlocuteur || ''));
+        }
+        
+        const emailField = document.getElementById('email');
+        if (emailField) {
+          emailField.value = decodeURIComponent(params.email || '');
+          console.log('Champ email rempli avec :', decodeURIComponent(params.email || ''));
+        }
+        
+        const telephoneField = document.getElementById('telephone');
+        if (telephoneField) {
+          telephoneField.value = decodeURIComponent(params.telephone || '');
+          console.log('Champ telephone rempli avec :', decodeURIComponent(params.telephone || ''));
+        }
+        
+        // Afficher les données précédentes (format et mois)
+        const formatDisplay = document.getElementById('format-precedent');
+        if (formatDisplay) {
+          formatDisplay.innerText = params.format || 'Non défini';
+          console.log('format_precedent rempli avec :', params.format || 'Non défini');
+        }
+        
+        const moisDisplay = document.getElementById('mois-precedent');
+        if (moisDisplay) {
+          moisDisplay.innerText = params.mois || 'Non défini';
+          console.log('mois_precedent rempli avec :', params.mois || 'Non défini');
+        }
+        
+        // Pré-sélectionner format et mois
+        selectFormat(params.format || '6X4');
+        selectMonth(params.mois || 'Janvier');
+      } catch (error) {
+        console.error('Erreur lors du pré-remplissage du formulaire :', error);
+      }
+    }
+    
+    // Sélection du format
+    function selectFormat(format) {
+      try {
+        if (!format) {
+          console.error('Format non défini');
+          return;
+        }
+        
+        const normalizedFormat = format.trim().toUpperCase();
+        console.log('Sélection du format :', normalizedFormat);
+        
+        const priceOptions = document.querySelectorAll('.price-option');
+        console.log('Nombre d\'options de format trouvées :', priceOptions.length);
+        
+        priceOptions.forEach(option => {
+          if (option && option.classList) {
+            option.classList.remove('selected');
+          } else {
+            console.error('Option de format invalide :', option);
+          }
+        });
+        
+        const formatOption = document.querySelector(`.price-option[data-format="${normalizedFormat}"]`);
+        if (formatOption) {
+          formatOption.classList.add('selected');
+          const formatEncartField = document.getElementById('format_encart');
+          if (formatEncartField) {
+            formatEncartField.value = normalizedFormat;
+            console.log('Champ format_encart rempli avec :', normalizedFormat);
+          }
+          const formatError = document.getElementById('format-error');
+          if (formatError) {
+            formatError.style.display = 'none';
+          }
+          
+          // Si le format est 12PARUTIONS, cacher la sélection de mois
+          const sectionMois = document.getElementById('section-mois');
+          if (sectionMois) {
+            sectionMois.style.display = normalizedFormat === '12PARUTIONS' ? 'none' : 'block';
+            
+            // Si 12PARUTIONS, remplir tous les mois
+            if (normalizedFormat === '12PARUTIONS') {
+              document.getElementById('mois_parution').value = 'Tous';
+            }
+          }
+        } else {
+          console.error(`Format ${normalizedFormat} introuvable dans les options`);
+        }
+      } catch (error) {
+        console.error('Erreur dans selectFormat :', error);
+      }
+    }
+    
+    // Sélection du mois
+    function selectMonth(month) {
+      try {
+        if (!month) {
+          console.error('Mois non défini');
+          return;
+        }
+        
+        // Vérifier si le format sélectionné est 12PARUTIONS
+        const formatEncartField = document.getElementById('format_encart');
+        if (formatEncartField && formatEncartField.value === '12PARUTIONS') {
+          document.getElementById('mois_parution').value = 'Tous';
+          return;
+        }
+        
+        const normalizedMonth = month.trim().charAt(0).toUpperCase() + month.trim().slice(1).toLowerCase();
+        console.log('Sélection du mois :', normalizedMonth);
+        
+        const monthButtons = document.querySelectorAll('.month-btn');
+        console.log('Nombre de boutons de mois trouvés :', monthButtons.length);
+        
+        monthButtons.forEach(btn => {
+          if (btn && btn.classList) {
+            btn.classList.remove('selected');
+          } else {
+            console.error('Bouton de mois invalide :', btn);
+          }
+        });
+        
+        const monthBtn = document.querySelector(`.month-btn[data-month="${normalizedMonth}"]`);
+        if (monthBtn) {
+          monthBtn.classList.add('selected');
+          const moisParutionField = document.getElementById('mois_parution');
+          if (moisParutionField) {
+            moisParutionField.value = normalizedMonth;
+            console.log('Champ mois_parution rempli avec :', normalizedMonth);
+          }
+          const monthError = document.getElementById('month-error');
+          if (monthError) {
+            monthError.style.display = 'none';
+          }
+        } else {
+          console.error(`Mois ${normalizedMonth} introuvable dans les options`);
+        }
+      } catch (error) {
+        console.error('Erreur dans selectMonth :', error);
+      }
+    }
+    
+    // Fonction pour calculer le prix selon le format
+    function calculatePrice(format) {
+      const prices = {
+        '6X4': 350,
+        '6X8': 500,
+        '12X4': 500,
+        '12PARUTIONS': 1800
+      };
+      
+      return prices[format] || 0;
+    }
+    
+    // Exécuter prefillForm lors du chargement de la page
+    document.addEventListener('DOMContentLoaded', function() {
+      console.log('DOM chargé, lancement de prefillForm');
+      prefillForm();
+      
+      // Validation et soumission du formulaire
+      document.getElementById('renewal-form').addEventListener('submit', function(event) {
+        event.preventDefault();
+        let valid = true;
+        
+        // Vérifier le format
+        if (!document.getElementById('format_encart').value) {
+          document.getElementById('format-error').style.display = 'block';
+          valid = false;
+        }
+        
+        // Vérifier le mois (sauf pour 12PARUTIONS)
+        const formatValue = document.getElementById('format_encart').value;
+        if (formatValue !== '12PARUTIONS' && !document.getElementById('mois_parution').value) {
+          document.getElementById('month-error').style.display = 'block';
+          valid = false;
+        }
+        
+        if (valid) {
+          // Afficher le loader
+          document.getElementById('submit-loader').style.display = 'block';
+          
+          // Collecter les données du formulaire
+          const formData = new FormData(this);
+          const formObject = {};
+          formData.forEach((value, key) => {
+            formObject[key] = value;
+          });
+          
+          // Ajouter le prix calculé
+          formObject.prix_total = calculatePrice(formObject.format_encart);
+          
+          // Envoyer au webhook n8n
+          fetch('https://n8n.aspchcrm.fr/webhook/prequalification-calendrier', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(formObject)
+          })
+          .then(response => {
+            if (!response.ok) {
+              throw new Error('Problème avec le webhook');
+            }
+            return response.json();
+          })
+          .then(data => {
+            console.log('Succès webhook:', data);
+            // Masquer le loader
+            document.getElementById('submit-loader').style.display = 'none';
+            // Afficher la confirmation
+            document.getElementById('renewal-form').style.display = 'none';
+            document.getElementById('confirmation').style.display = 'block';
+            // Scroll vers la confirmation
+            document.getElementById('confirmation').scrollIntoView({ behavior: 'smooth' });
+          })
+          .catch(error => {
+            console.error('Erreur webhook:', error);
+            
+            // Masquer le loader
+            document.getElementById('submit-loader').style.display = 'none';
+            
+            // En cas d'échec du webhook, soumettre via Netlify Forms
+            console.log('Soumission via Netlify Forms...');
+            const netlifyForm = document.createElement('form');
+            netlifyForm.method = 'POST';
+            netlifyForm.action = '/';
+            netlifyForm.setAttribute('data-netlify', 'true');
+            netlifyForm.setAttribute('name', 'calendrier-2026');
+            
+            // Ajouter chaque champ au formulaire Netlify
+            Object.keys(formObject).forEach(key => {
+              if (key !== 'form-name' && key !== 'bot-field') {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = key;
+                input.value = formObject[key];
+                netlifyForm.appendChild(input);
+              }
+            });
+            
+            // Ajouter le champ form-name
+            const formNameInput = document.createElement('input');
+            formNameInput.type = 'hidden';
+            formNameInput.name = 'form-name';
+            formNameInput.value = 'calendrier-2026';
+            netlifyForm.appendChild(formNameInput);
+            
+            // Ajouter le formulaire au document et le soumettre
+            document.body.appendChild(netlifyForm);
+            netlifyForm.submit();
+          });
+        }
+      });
+    });
+    
+    // Réessayer le pré-remplissage après un court délai (en cas de chargement asynchrone)
+    setTimeout(() => {
+      console.log('Réessai de pré-remplissage après 1 seconde');
+      prefillForm();
+    }, 1000);
+  </script>
+</body>
+</html>

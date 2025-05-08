@@ -1,0 +1,26 @@
+[build]
+  publish = "."
+
+# Redirections pour les formulaires
+[[redirects]]
+  from = "/prospecteur"
+  to = "/prospecteur/index.html"
+  status = 200
+  
+[[redirects]]
+  from = "/qualification"
+  to = "/qualification/index.html"
+  status = 200
+  
+# Redirection par défaut pour tout le reste
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+  
+# Variables d'environnement pour les webhooks
+[build.environment]
+  WEBHOOK_PREQUALIFICATION = "https://n8n.aspchcrm.fr/webhook/prequalification-calendrier"
+  WEBHOOK_PROSPECTEUR = "https://n8n.aspchcrm.fr/webhook/prospecteur-inscription"
+  WEBHOOK_QUALIFICATION = "https://n8n.aspchcrm.fr/webhook/qualification-submission"
+  API_ENTERPRISES = "https://n8n.aspchcrm.fr/webhook/get-enterprises"
