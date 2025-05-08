@@ -12,6 +12,7 @@ function getUrlParams() {
   params.interlocuteur = urlParams.get('interlocuteur') || '';
   params.email = urlParams.get('email') || '';
   params.telephone = urlParams.get('telephone') || '';
+  params.commune = urlParams.get('commune') || ''; // Ajouté ici
   
   console.log('Paramètres extraits de l\'URL :', params);
   return params;
@@ -53,6 +54,31 @@ function prefillForm() {
     fillField('interlocuteur', params.interlocuteur, true);
     fillField('email', params.email, true);
     fillField('telephone', params.telephone, true);
+    
+    // Ajouter ceci pour gérer le champ commune
+    const communeSelect = document.getElementById('commune_entreprise');
+    if (communeSelect && params.commune) {
+      const communeValue = safeDecodeURIComponent(params.commune);
+      console.log('Tentative de sélection de la commune:', communeValue);
+      
+      // Chercher une option qui correspond exactement ou partiellement
+      let found = false;
+      Array.from(communeSelect.options).forEach(option => {
+        if (option.value.toUpperCase() === communeValue.toUpperCase() || 
+            option.value.toUpperCase().includes(communeValue.toUpperCase()) || 
+            communeValue.toUpperCase().includes(option.value.toUpperCase())) {
+          option.selected = true;
+          found = true;
+          console.log('Commune sélectionnée:', option.value);
+        }
+      });
+      
+      if (!found) {
+        console.warn(`Commune "${communeValue}" non trouvée dans les options disponibles`);
+      }
+    } else {
+      console.log('Champ commune_entreprise non trouvé ou paramètre commune non fourni');
+    }
     
     // Méthode alternative pour récupérer les éléments format et mois
     // Essayer d'abord avec les id spécifiques s'ils existent
