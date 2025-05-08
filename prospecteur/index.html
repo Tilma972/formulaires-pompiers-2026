@@ -106,6 +106,30 @@
       font-size: 16px;
       box-sizing: border-box;
     }
+    .search-container {
+      position: relative;
+      margin-bottom: 15px;
+      display: flex;
+      align-items: center;
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #666;
+      z-index: 1;
+      pointer-events: none; /* Pour que les clics passent à travers l'icône */
+    }
+
+    .search-input {
+      padding-left: 35px; /* Espace pour l'icône */
+      width: 100%;
+      background-color: #fff;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
     .hidden-section {
       display: none;
     }
@@ -156,6 +180,49 @@
     }
     .hidden {
       display: none;
+    }
+    /* Styles pour la sélection de commune */
+    .commune-selector {
+      margin-bottom: 15px;
+    }
+    .commune-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 10px;
+    }
+    .commune-chip {
+      background-color: #e0e0e0;
+      border: 1px solid #ccc;
+      border-radius: 20px;
+      padding: 8px 15px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .commune-chip:hover {
+      background-color: #d0d0d0;
+    }
+    .commune-chip.selected {
+      background-color: var(--accent);
+      color: white;
+      border-color: var(--accent);
+    }
+    /* Animation de chargement */
+    .loader {
+      border: 3px solid #f3f3f3;
+      border-top: 3px solid var(--accent);
+      border-radius: 50%;
+      width: 20px;
+      height: 20px;
+      animation: spin 1s linear infinite;
+      display: inline-block;
+      vertical-align: middle;
+      margin-right: 10px;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
     }
     @media (max-width: 768px) {
       .container {
@@ -214,12 +281,29 @@
       
       <div class="form-section">
         <div class="section-title">ATTRIBUTION DE PROSPECT</div>
+        
+        <!-- Champ de recherche d'entreprise -->
+        <div class="form-row">
+          <label for="entreprise-search">Rechercher une entreprise</label>
+          <div class="search-container">
+            <span class="search-icon">🔍</span>
+            <input 
+              type="text" 
+              id="entreprise-search" 
+              class="search-input" 
+              placeholder="Commencez à taper le nom d'une entreprise..."
+              autocomplete="off"
+            >
+          </div>
+        </div>
+        
         <div class="form-row">
           <label for="entreprise">Choisir une entreprise *</label>
           <select id="entreprise" name="entreprise" required>
             <option value="">-- Sélectionnez une entreprise --</option>
-            <!-- Les options seront chargées dynamiquement via JavaScript -->
+            <!-- Options chargées dynamiquement -->
           </select>
+          <div id="loading-enterprises" style="display: none;"><span class="loader"></span> Chargement des entreprises...</div>
           <div class="error-message" id="entreprise-error">Veuillez sélectionner une entreprise</div>
         </div>
         
@@ -238,10 +322,24 @@
             <label for="adresse_entreprise">Adresse *</label>
             <input type="text" id="adresse_entreprise" name="adresse_entreprise">
           </div>
+          
+          <!-- Sélection de commune standardisée -->
           <div class="form-row">
             <label for="commune_entreprise">Commune *</label>
-            <input type="text" id="commune_entreprise" name="commune_entreprise">
+            <select id="commune_entreprise" name="commune_entreprise">
+              <option value="">-- Sélectionnez une commune --</option>
+              <!-- Options préchargées en JavaScript -->
+            </select>
+            
+            <!-- Section pour les communes principales (chips) -->
+            <div class="commune-selector">
+              <p style="font-size: 13px; margin-top: 8px; margin-bottom: 5px;">Communes principales :</p>
+              <div id="commune-chips" class="commune-chips">
+                <!-- Communes principales préchargées en JavaScript -->
+              </div>
+            </div>
           </div>
+          
           <div class="form-row">
             <label for="telephone_entreprise">Téléphone</label>
             <input type="tel" id="telephone_entreprise" name="telephone_entreprise">
@@ -281,21 +379,98 @@
   </div>
   
   <script>
-    // Chargement dynamique des entreprises depuis l'API
     document.addEventListener('DOMContentLoaded', function() {
-      // Fonction pour charger les entreprises
+      // Liste préchargée des communes (générée via votre API get-communes)
+      const COMMUNES = [
+        "ADISSAN",
+        "ASPIRAN",
+        "BRIGNAC",
+        "CABRIÈRES",
+        "CANET",
+        "CEYRAS",
+        "CLERMONT-L'HÉRAULT",
+        "FONTÈS",
+        "LACOSTE",
+        "LIAUSSON", 
+        "LIEURAN-CABRIÈRES",
+        "MÉRIFONS",
+        "MOURÈZE",
+        "NÉBIAN",
+        "OCTON",
+        "PAULHAN",
+        "PÉRET",
+        "SAINT-FÉLIX-DE-LODEZ",
+        "SALASC",
+        "USCLAS-D'HÉRAULT",
+        "VALMASCLE",
+        "VILLENEUVETTE"
+        // Complétez avec la liste complète des communes de votre région
+      ];
+      
+      // Communes principales pour les chips
+      const COMMUNES_PRINCIPALES = [
+        "CLERMONT-L'HÉRAULT", 
+        "BRIGNAC", 
+        "CANET", 
+        "CEYRAS", 
+        "LACOSTE", 
+        "NÉBIAN", 
+        "PAULHAN", 
+        "SAINT-FÉLIX-DE-LODEZ",
+        "SALASC"
+      ];
+      
+      // Remplir le select des communes avec la liste préchargée
+      const populateCommunes = () => {
+        const communeSelect = document.getElementById('commune_entreprise');
+        COMMUNES.forEach(commune => {
+          const option = document.createElement('option');
+          option.value = commune;
+          option.textContent = commune;
+          communeSelect.appendChild(option);
+        });
+        
+        // Créer les chips pour les communes principales
+        const communeChipsContainer = document.getElementById('commune-chips');
+        COMMUNES_PRINCIPALES.forEach(commune => {
+          if (COMMUNES.includes(commune)) {
+            const chip = document.createElement('div');
+            chip.className = 'commune-chip';
+            chip.textContent = commune;
+            chip.setAttribute('data-commune', commune);
+            chip.addEventListener('click', function() {
+              // Sélectionner la commune correspondante dans le select
+              communeSelect.value = commune;
+              
+              // Mise à jour visuelle des chips
+              document.querySelectorAll('.commune-chip').forEach(c => {
+                c.classList.remove('selected');
+              });
+              this.classList.add('selected');
+            });
+            communeChipsContainer.appendChild(chip);
+          }
+        });
+      };
+      
+      // Charger les entreprises
       const loadEnterprises = async () => {
+        const loadingIndicator = document.getElementById('loading-enterprises');
+        const selectElement = document.getElementById('entreprise');
+        
         try {
+          // Afficher l'indicateur de chargement
+          loadingIndicator.style.display = 'block';
+          
+          // Charger les entreprises
           const response = await fetch('https://n8n.aspchcrm.fr/webhook/get-enterprises');
           if (!response.ok) {
             throw new Error('Erreur lors du chargement des entreprises');
           }
-          const data = await response.json();
-          
-          const selectElement = document.getElementById('entreprise');
+          const enterprises = await response.json();
           
           // Trier les entreprises par commune puis par nom
-          data.sort((a, b) => {
+          enterprises.sort((a, b) => {
             if (a.commune !== b.commune) {
               return a.commune.localeCompare(b.commune);
             }
@@ -305,7 +480,7 @@
           // Grouper par commune
           let currentCommune = '';
           
-          data.forEach(enterprise => {
+          enterprises.forEach(enterprise => {
             // Si on change de commune, ajouter un groupe optgroup
             if (enterprise.commune !== currentCommune) {
               currentCommune = enterprise.commune;
@@ -320,112 +495,190 @@
             option.textContent = enterprise.nom_entreprise;
             selectElement.lastChild.appendChild(option);
           });
+          
         } catch (error) {
           console.error('Erreur:', error);
-          // Fallback en cas d'erreur - charger quelques entreprises par défaut
-          const selectElement = document.getElementById('entreprise');
+          
+          // Fallback en cas d'erreur
           const option = document.createElement('option');
           option.value = "error";
           option.textContent = "Erreur de chargement - veuillez réessayer plus tard";
           selectElement.appendChild(option);
+          
+        } finally {
+          // Masquer l'indicateur de chargement
+          loadingIndicator.style.display = 'none';
         }
       };
       
-      // Charger les entreprises
-      loadEnterprises();
+      // Fonction de recherche d'entreprise améliorée
+      const setupEnterpriseSearch = () => {
+        const searchInput = document.getElementById('entreprise-search');
+        const selectElement = document.getElementById('entreprise');
+  
+        searchInput.addEventListener('input', function() {
+          const searchTerm = this.value.toLowerCase().trim();
+          console.log('Recherche de:', searchTerm); // Débogage
+    
+          // Si le champ est vide, restaurer toutes les options
+          if (searchTerm === '') {
+            const allOptions = selectElement.querySelectorAll('option');
+            const allOptgroups = selectElement.querySelectorAll('optgroup');
+      
+            allOptions.forEach(option => {
+              option.style.display = '';
+            });
+      
+            allOptgroups.forEach(optgroup => {
+            optgroup.style.display = '';
+            });
+      
+            return;
+          }
+    
+          const optgroups = selectElement.querySelectorAll('optgroup');
+    
+          // Parcourir tous les groupes (communes)
+          optgroups.forEach(optgroup => {
+            let hasVisibleOptions = false;
+            const options = optgroup.querySelectorAll('option');
+      
+            // Vérifier chaque option dans le groupe
+            options.forEach(option => {
+              if (option.value === '') return; // Ignorer l'option "Sélectionnez une entreprise"
+        
+              const optionText = option.textContent.toLowerCase();
+              const isMatch = optionText.includes(searchTerm);
+        
+              // Afficher/masquer l'option selon la correspondance
+              if (isMatch) {
+                option.style.display = '';
+          hasVisibleOptions = true;
+        } else {
+          option.style.display = 'none';
+        }
+      });
+      
+      // Masquer le groupe entier si aucune entreprise ne correspond
+      optgroup.style.display = hasVisibleOptions ? '' : 'none';
+    });
+  });
+};
       
       // Gestion de l'affichage conditionnel
-      const checkboxNouvelleEntreprise = document.getElementById('nouvelle_entreprise');
-      const sectionNouvelleEntreprise = document.getElementById('nouvelle-entreprise-section');
-      const champEntreprise = document.getElementById('entreprise');
-      
-      checkboxNouvelleEntreprise.addEventListener('change', function() {
-        if (this.checked) {
-          sectionNouvelleEntreprise.style.display = 'block';
-          champEntreprise.required = false;
-          document.getElementById('nom_entreprise').required = true;
-          document.getElementById('adresse_entreprise').required = true;
-          document.getElementById('commune_entreprise').required = true;
-        } else {
-          sectionNouvelleEntreprise.style.display = 'none';
-          champEntreprise.required = true;
-          document.getElementById('nom_entreprise').required = false;
-          document.getElementById('adresse_entreprise').required = false;
-          document.getElementById('commune_entreprise').required = false;
-        }
-      });
+      const setupConditionalDisplay = () => {
+        const checkboxNouvelleEntreprise = document.getElementById('nouvelle_entreprise');
+        const sectionNouvelleEntreprise = document.getElementById('nouvelle-entreprise-section');
+        const champEntreprise = document.getElementById('entreprise');
+        
+        checkboxNouvelleEntreprise.addEventListener('change', function() {
+          if (this.checked) {
+            sectionNouvelleEntreprise.style.display = 'block';
+            champEntreprise.required = false;
+            document.getElementById('nom_entreprise').required = true;
+            document.getElementById('adresse_entreprise').required = true;
+            document.getElementById('commune_entreprise').required = true;
+          } else {
+            sectionNouvelleEntreprise.style.display = 'none';
+            champEntreprise.required = true;
+            document.getElementById('nom_entreprise').required = false;
+            document.getElementById('adresse_entreprise').required = false;
+            document.getElementById('commune_entreprise').required = false;
+          }
+        });
+      };
       
       // Gestion de la soumission du formulaire
-      const form = document.getElementById('prospecteur-form');
-      
-      form.addEventListener('submit', async function(event) {
-        event.preventDefault();
+      const setupFormSubmission = () => {
+        const form = document.getElementById('prospecteur-form');
         
-        // Vérifier que le formulaire est valide
-        if (!form.checkValidity()) {
-          return;
-        }
-        
-        // Collecter les données du formulaire
-        const formData = new FormData(form);
-        const formObject = {};
-        formData.forEach((value, key) => {
-          formObject[key] = value;
-        });
-        
-        try {
-          // Envoyer les données au webhook n8n
-          const response = await fetch('https://n8n.aspchcrm.fr/webhook/prospecteur-inscription', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(formObject)
-          });
+        form.addEventListener('submit', async function(event) {
+          event.preventDefault();
           
-          if (!response.ok) {
-            throw new Error('Erreur lors de l\'envoi du formulaire');
+          // Vérifier que le formulaire est valide
+          if (!form.checkValidity()) {
+            return;
           }
           
-          // Afficher la confirmation
-          document.getElementById('prospecteur-form').style.display = 'none';
-          document.getElementById('confirmation').style.display = 'block';
-          
-          // Scroll vers la confirmation
-          document.getElementById('confirmation').scrollIntoView({ behavior: 'smooth' });
-        } catch (error) {
-          console.error('Erreur:', error);
-          
-          // Fallback: soumettre via Netlify Forms
-          const netlifyForm = document.createElement('form');
-          netlifyForm.method = 'POST';
-          netlifyForm.action = '/';
-          netlifyForm.setAttribute('data-netlify', 'true');
-          netlifyForm.setAttribute('name', 'prospecteur-form');
-          
-          // Ajouter chaque champ au formulaire Netlify
-          Object.keys(formObject).forEach(key => {
-            if (key !== 'form-name' && key !== 'bot-field') {
-              const input = document.createElement('input');
-              input.type = 'hidden';
-              input.name = key;
-              input.value = formObject[key];
-              netlifyForm.appendChild(input);
-            }
+          // Collecter les données du formulaire
+          const formData = new FormData(form);
+          const formObject = {};
+          formData.forEach((value, key) => {
+            formObject[key] = value;
           });
           
-          // Ajouter le champ form-name
-          const formNameInput = document.createElement('input');
-          formNameInput.type = 'hidden';
-          formNameInput.name = 'form-name';
-          formNameInput.value = 'prospecteur-form';
-          netlifyForm.appendChild(formNameInput);
-          
-          // Ajouter le formulaire au document et le soumettre
-          document.body.appendChild(netlifyForm);
-          netlifyForm.submit();
-        }
+          try {
+            // Désactiver le bouton de soumission pour éviter les clics multiples
+            const submitButton = form.querySelector('button[type="submit"]');
+            submitButton.disabled = true;
+            submitButton.innerHTML = '<span class="loader"></span> Envoi en cours...';
+            
+            // Envoyer les données au webhook n8n
+            const response = await fetch('https://n8n.aspchcrm.fr/webhook/prospecteur-inscription', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify(formObject)
+            });
+            
+            if (!response.ok) {
+              throw new Error('Erreur lors de l\'envoi du formulaire');
+            }
+            
+            // Afficher la confirmation
+            document.getElementById('prospecteur-form').style.display = 'none';
+            document.getElementById('confirmation').style.display = 'block';
+            
+            // Scroll vers la confirmation
+            document.getElementById('confirmation').scrollIntoView({ behavior: 'smooth' });
+            
+          } catch (error) {
+            console.error('Erreur:', error);
+            
+            // Réactiver le bouton de soumission
+            submitButton.disabled = false;
+            submitButton.textContent = 'CONFIRMER MA PARTICIPATION';
+            
+            // Fallback: soumettre via Netlify Forms
+            const netlifyForm = document.createElement('form');
+            netlifyForm.method = 'POST';
+            netlifyForm.action = '/';
+            netlifyForm.setAttribute('data-netlify', 'true');
+            netlifyForm.setAttribute('name', 'prospecteur-form');
+            
+            // Ajouter chaque champ au formulaire Netlify
+            Object.keys(formObject).forEach(key => {
+              if (key !== 'form-name' && key !== 'bot-field') {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = key;
+                input.value = formObject[key];
+                netlifyForm.appendChild(input);
+              }
+            });
+            
+            // Ajouter le champ form-name
+            const formNameInput = document.createElement('input');
+            formNameInput.type = 'hidden';
+            formNameInput.name = 'form-name';
+            formNameInput.value = 'prospecteur-form';
+            netlifyForm.appendChild(formNameInput);
+            
+            // Ajouter le formulaire au document et le soumettre
+            document.body.appendChild(netlifyForm);
+            netlifyForm.submit();
+          }
+        });
+      };
+      
+      // Initialisation
+      populateCommunes();
+      loadEnterprises().then(() => {
+        setupEnterpriseSearch();
       });
+      setupConditionalDisplay();
+      setupFormSubmission();
     });
   </script>
 </body>
