@@ -412,7 +412,7 @@
         </div>
       </div>
       
-      <button type="submit" class="submit-btn">CONFIRMER MA PARTICIPATION</button>
+      <button type="submit" class="submit-btn" id="submit-button">CONFIRMER MA PARTICIPATION</button>
       
       <div class="data-policy">
         En soumettant ce formulaire, vous acceptez que les informations saisies soient utilisées par l'Amicale des Sapeurs-Pompiers de Clermont l'Hérault dans le cadre de votre participation à la campagne de prospection pour le calendrier 2026.
@@ -518,6 +518,7 @@
           }
           const fetchedEnterprises = await response.json(); // Use a different name to avoid conflict with global
           enterprises = fetchedEnterprises; // Assign to the global variable
+          window.loadedEnterprises = enterprises; // Store for global access
           
           // Sorting and grouping will be handled by setupEnterpriseSelector
           
@@ -638,27 +639,37 @@
       const setupFormSubmission = () => {
         const form = document.getElementById('prospecteur-form');
         
+        // Modification à apporter à votre code de gestion du formulaire
         form.addEventListener('submit', async function(event) {
           event.preventDefault();
           
-          // Vérifier que le formulaire est valide
-          if (!form.checkValidity()) {
-            return;
-          }
+          // Désactiver le bouton de soumission
+          const submitButton = document.getElementById('submit-button');
+          submitButton.disabled = true;
+          submitButton.innerHTML = '<span class="loader"></span> Traitement en cours...'; // Using .loader for consistency
           
           // Collecter les données du formulaire
-          const formData = new FormData(form);
+          const formData = new FormData(this);
           const formObject = {};
           formData.forEach((value, key) => {
             formObject[key] = value;
           });
           
+          // IMPORTANT: Enrichir les données avec l'information complète de l'entreprise
+          const entrepriseId = formObject.entreprise;
+          if (entrepriseId && !formObject.nouvelle_entreprise) {
+            // Rechercher l'entreprise dans la liste chargée
+            const selectedEnterprise = window.loadedEnterprises.find(e => e.id == entrepriseId);
+            if (selectedEnterprise) {
+              formObject.entreprise_nom = selectedEnterprise.nom_entreprise;
+              formObject.entreprise_commune = selectedEnterprise.commune;
+              formObject.entreprise_adresse = selectedEnterprise.adresse || '';
+              formObject.entreprise_telephone = selectedEnterprise.telephone || '';
+              formObject.entreprise_email = selectedEnterprise.email || '';
+            }
+          }
+          
           try {
-            // Désactiver le bouton de soumission pour éviter les clics multiples
-            const submitButton = form.querySelector('button[type="submit"]');
-            submitButton.disabled = true;
-            submitButton.innerHTML = '<span class="loader"></span> Envoi en cours...';
-            
             // Envoyer les données au webhook n8n
             const response = await fetch('https://n8n.aspchcrm.fr/webhook/prospecteur-inscription', {
               method: 'POST',
@@ -675,27 +686,25 @@
             // Afficher la confirmation
             document.getElementById('prospecteur-form').style.display = 'none';
             document.getElementById('confirmation').style.display = 'block';
-            
-            // Scroll vers la confirmation
             document.getElementById('confirmation').scrollIntoView({ behavior: 'smooth' });
             
           } catch (error) {
             console.error('Erreur:', error);
-            
-            // Réactiver le bouton de soumission
+            // Réactiver le bouton
             submitButton.disabled = false;
-            submitButton.textContent = 'CONFIRMER MA PARTICIPATION';
+            submitButton.innerHTML = 'CONFIRMER MA PARTICIPATION';
             
-            // Fallback: soumettre via Netlify Forms
+            // Fallback Netlify Forms si nécessaire...
+            // Note: The original Netlify fallback logic can be kept or adapted as needed.
+            // For this example, I'm keeping it similar to the original fallback.
             const netlifyForm = document.createElement('form');
             netlifyForm.method = 'POST';
-            netlifyForm.action = '/';
+            netlifyForm.action = '/'; // Assuming Netlify handles submissions to the root
             netlifyForm.setAttribute('data-netlify', 'true');
-            netlifyForm.setAttribute('name', 'prospecteur-form');
+            netlifyForm.setAttribute('name', 'prospecteur-form'); // Ensure this matches your Netlify form name
             
-            // Ajouter chaque champ au formulaire Netlify
             Object.keys(formObject).forEach(key => {
-              if (key !== 'form-name' && key !== 'bot-field') {
+              if (key !== 'form-name' && key !== 'bot-field') { // Standard Netlify hidden fields
                 const input = document.createElement('input');
                 input.type = 'hidden';
                 input.name = key;
@@ -704,14 +713,16 @@
               }
             });
             
-            // Ajouter le champ form-name
+            // Add the form-name field for Netlify
             const formNameInput = document.createElement('input');
             formNameInput.type = 'hidden';
             formNameInput.name = 'form-name';
-            formNameInput.value = 'prospecteur-form';
+            formNameInput.value = 'prospecteur-form'; // Must match the form's name attribute
             netlifyForm.appendChild(formNameInput);
-            
-            // Ajouter le formulaire au document et le soumettre
+
+            // It's generally better to alert the user or log, rather than auto-submitting a fallback
+            // without user interaction after an error. Consider user experience here.
+            // For now, replicating the previous fallback:
             document.body.appendChild(netlifyForm);
             netlifyForm.submit();
           }
