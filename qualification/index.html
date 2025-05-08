@@ -321,6 +321,10 @@
       .month-grid {
         grid-template-columns: repeat(3, 1fr);
       }
+      .month-btn {
+        padding: 8px 6px;
+        font-size: 12px; /* Réduire la taille de police */
+      }
       .format-options {
         flex-direction: column;
       }
@@ -330,6 +334,13 @@
       .interest-level {
         flex-basis: 48%;
         margin-bottom: 10px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .month-btn {
+        padding: 6px 4px;
+        font-size: 11px; /* Encore plus petit pour les très petits écrans */
       }
     }
 
