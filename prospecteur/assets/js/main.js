@@ -967,11 +967,11 @@
                   : selectedEnterprise.commune || '';
                 
                 // Format exact attendu par le workflow n8n
-                formObject.entreprise_nom = selectedEnterprise.nom_entreprise || '';
-                formObject.entreprise_commune = commune;
-                formObject.entreprise_adresse = selectedEnterprise.adresse || '';
-                formObject.entreprise_telephone = selectedEnterprise.telephone || selectedEnterprise.portable || '';
-                formObject.entreprise_email = selectedEnterprise.email || '';
+                formObject.nom_entreprise = selectedEnterprise.nom_entreprise || '';
+                formObject.commune_entreprise = commune;
+                formObject.adresse_entreprise = selectedEnterprise.adresse || '';
+                formObject.telephone_entreprise = selectedEnterprise.telephone || selectedEnterprise.portable || '';
+                formObject.email_entreprise = selectedEnterprise.email || '';
               }
             }
             
