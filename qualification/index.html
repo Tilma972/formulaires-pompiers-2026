@@ -613,69 +613,6 @@
     let selectedMonths = [];
     let communesLoaded = false;
     
-    // Charger les communes depuis l'API dédiée
-    async function loadCommunes() {
-      try {
-        // Afficher un indicateur de chargement dans le select
-        const communeSelect = document.getElementById('commune_entreprise');
-        communeSelect.innerHTML = '<option value="">-- Chargement des communes... --</option>';
-        
-        const response = await fetch('https://n8n.aspchcrm.fr/webhook/get-communes');
-        if (!response.ok) {
-          throw new Error('Erreur lors du chargement des communes');
-        }
-        
-        const communes = await response.json();
-        console.log('Communes chargées:', communes.length);
-        
-        // Stocker les communes pour référence future
-        window.availableCommunes = communes;
-        
-        // Remplir le menu déroulant
-        populateCommuneDropdown(communes);
-        communesLoaded = true;
-        
-        return communes;
-      } catch (error) {
-        console.error('Erreur lors du chargement des communes:', error);
-        
-        // Communes par défaut en cas d'erreur
-        const defaultCommunes = [
-          "CLERMONT-L'HERAULT", "CANET", "BRIGNAC", "CEYRAS", 
-          "LACOSTE", "NÉBIAN", "PAULHAN", "ASPIRAN", "PÉZENAS"
-        ];
-        
-        // Remplir avec les communes par défaut
-        populateCommuneDropdown(defaultCommunes);
-        window.availableCommunes = defaultCommunes;
-        communesLoaded = true;
-        
-        return defaultCommunes;
-      }
-    }
-    
-    // Remplir le menu déroulant des communes
-    function populateCommuneDropdown(communes) {
-      const selectElement = document.getElementById('commune_entreprise');
-      if (!selectElement) return;
-      
-      // Vider les options existantes
-      selectElement.innerHTML = '';
-      
-      // Ajouter l'option par défaut
-      const defaultOption = document.createElement('option');
-      defaultOption.value = '';
-      defaultOption.textContent = '-- Sélectionnez une commune --';
-      selectElement.appendChild(defaultOption);
-      
-      // Ajouter chaque commune comme option
-      communes.forEach(commune => {
-        const option = document.createElement('option');
-        option.value = commune;
-        option.textContent = commune;
-        selectElement.appendChild(option);
-      });
-    }
     
     // Récupérer les entreprises depuis l'API existante
     async function loadEnterprisesAndCommunes() {
@@ -685,8 +622,7 @@
         const originalValue = enterpriseDisplay.value;
         enterpriseDisplay.value = "Chargement des données...";
         
-        // Charger les communes en parallèle
-        loadCommunes();
+        // Les communes seront chargées automatiquement
         
         const response = await fetch('https://n8n.dsolution-ia.fr/webhook/get-enterprises');
         if (!response.ok) {
@@ -750,31 +686,6 @@
       }
     }
     
-    // Extraire les communes uniques à partir des entreprises
-    function extractCommunes(enterprises) {
-      const uniqueCommunes = new Set();
-      
-      enterprises.forEach(enterprise => {
-        let commune = '';
-        
-        // Différentes manières dont la commune pourrait être stockée
-        if (enterprise.commune) {
-          commune = typeof enterprise.commune === 'string' ? 
-                    enterprise.commune : 
-                    (enterprise.commune.value || '');
-        } else if (enterprise.Commune) {
-          commune = typeof enterprise.Commune === 'string' ? 
-                    enterprise.Commune : 
-                    (enterprise.Commune.value || '');
-        }
-        
-        if (commune && commune.trim() !== '') {
-          uniqueCommunes.add(commune.trim().toUpperCase());
-        }
-      });
-      
-      return Array.from(uniqueCommunes).sort();
-    }
     
     // Récupérer l'ID du prospecteur et autres paramètres depuis l'URL
     document.addEventListener('DOMContentLoaded', function() {
@@ -821,33 +732,7 @@
       if (commune) {
         const communeSelect = document.getElementById('commune_entreprise');
         
-        // Fonction pour essayer de définir la commune
-        const setCommuneValue = () => {
-          if (communesLoaded && window.availableCommunes) {
-            try {
-              const communeValue = decodeURIComponent(commune).toUpperCase();
-              // Chercher la commune dans la liste (matcher exactement ou partiellement)
-              const matchedCommune = window.availableCommunes.find(c => 
-                c === communeValue || c.includes(communeValue) || communeValue.includes(c)
-              );
-              
-              if (matchedCommune) {
-                communeSelect.value = matchedCommune;
-                console.log('Commune sélectionnée:', matchedCommune);
-              } else {
-                console.warn(`Commune '${communeValue}' non trouvée dans la liste`);
-              }
-            } catch(e) {
-              console.error('Erreur lors de la sélection de la commune:', e);
-            }
-          } else {
-            // Si les communes ne sont pas encore chargées, réessayer dans 500ms
-            setTimeout(setCommuneValue, 500);
-          }
-        };
-        
-        // Lancer la tentative de définition de la commune
-        setCommuneValue();
+        // La commune sera définie automatiquement
       }
       
       // Remplir les autres champs s'ils existent dans l'URL
@@ -1257,7 +1142,7 @@
       return prixUnitaire * nombreParutions;
     }
   </script>
-  <script src="assets/js/main.js" defer></script>
-  <script src="assets/js/prefillform-qualification.js" defer></script>
+  <script src="../assets/js/main.js" defer></script>
+  <script src="../assets/js/prefillform-qualification.js" defer></script>
 </body>
 </html>

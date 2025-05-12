@@ -55,12 +55,7 @@
             fillField('telephone_entreprise', params.telephone_entreprise, true);
             fillField('email_entreprise', params.email_entreprise, true);
             
-            // Sélectionner la commune via les chips si spécifiée
-            if (params.commune_entreprise) {
-              setTimeout(() => {
-                selectCommuneViaChips(params.commune_entreprise);
-              }, 500); // Attendre que les chips soient chargés
-            }
+            // La commune sera sélectionnée automatiquement par le formulaire
           }
         }
         
@@ -140,61 +135,4 @@
       }
     }
     
-    // Fonction pour sélectionner une commune via les chips
-    function selectCommuneViaChips(communeValue) {
-      if (!communeValue) return;
-      
-      // Décoder la valeur de la commune
-      const decodedCommune = safeDecodeURIComponent(communeValue);
-      console.log('Tentative de sélection de la commune via chips:', decodedCommune);
-      
-      // Chercher tous les chips de commune
-      const communeChips = document.querySelectorAll('.commune-chip');
-      if (communeChips.length === 0) {
-        console.warn('Aucun chip de commune trouvé dans le DOM');
-        return;
-      }
-      
-      // Rechercher un chip qui correspond à la commune
-      let foundChip = null;
-      communeChips.forEach(chip => {
-        const chipText = chip.textContent.trim().toUpperCase();
-        const searchCommune = decodedCommune.toUpperCase();
-        
-        if (chipText === searchCommune || 
-            chipText.includes(searchCommune) || 
-            searchCommune.includes(chipText)) {
-          foundChip = chip;
-        }
-      });
-      
-      // Cliquer sur le chip si trouvé
-      if (foundChip) {
-        console.log('Commune trouvée dans les chips:', foundChip.textContent.trim());
-        foundChip.click();
-      } else {
-        console.warn(`Aucun chip ne correspond à la commune '${decodedCommune}'`);
-        
-        // Fallback: essayer avec le select de commune directement
-        const communeSelect = document.getElementById('commune_entreprise');
-        if (communeSelect) {
-          // Parcourir les options pour trouver une correspondance
-          for (let i = 0; i < communeSelect.options.length; i++) {
-            const optionText = communeSelect.options[i].text.toUpperCase();
-            if (optionText === decodedCommune.toUpperCase() || 
-                optionText.includes(decodedCommune.toUpperCase()) || 
-                decodedCommune.toUpperCase().includes(optionText)) {
-              
-              communeSelect.selectedIndex = i;
-              console.log('Commune sélectionnée via select:', communeSelect.options[i].text);
-              
-              // Déclencher l'événement change
-              const changeEvent = new Event('change', { bubbles: true });
-              communeSelect.dispatchEvent(changeEvent);
-              return;
-            }
-          }
-        }
-      }
-    }
   })();
