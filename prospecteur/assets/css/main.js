@@ -1240,7 +1240,6 @@
       
       // Ajouter des améliorations d'accessibilité
       enhanceAccessibility();
-    });
     
       // Ajouter des attributs ARIA
       document.querySelectorAll('label').forEach(label => {
@@ -1298,5 +1297,5 @@
         }
       `;
       document.head.appendChild(a11yStyles);
-    }
+   
   
