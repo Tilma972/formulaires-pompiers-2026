@@ -1,4 +1,4 @@
-// prefillform-qualification.js - Version simplifiée sans chargement de communes
+// prefillform-qualification.js - Version simplifiée pour le formulaire de qualification
 
 (function() {
   // Attendre que le DOM soit chargé
@@ -19,17 +19,28 @@
       fillField('entreprise', params.eid || params.id);
 
       // Remplir les champs visibles
-      fillField('entreprise_display', params.nom, true);
+      if (params.nom) {
+        fillField('entreprise_display', params.nom, true);
+      }
       
       // Remplir la commune en lecture seule
       if (params.commune) {
         fillField('commune_entreprise', params.commune, true);
       }
       
-      // Remplir les autres champs d'information
-      fillField('interlocuteur', params.interlocuteur, true);
-      fillField('email_contact', params.email, true);
-      fillField('telephone_contact', params.telephone, true);
+      // Noter que l'interlocuteur reste éditable - c'est la personne de l'entreprise
+      if (params.interlocuteur) {
+        fillField('interlocuteur', params.interlocuteur, true);
+      }
+      
+      // Remplir les champs de contact avec les informations de l'entreprise
+      if (params.email) {
+        fillField('email_contact', params.email, true);
+      }
+      
+      if (params.telephone) {
+        fillField('telephone_contact', params.telephone, true);
+      }
       
       // Définir la date du jour pour le contact
       const today = new Date().toISOString().split('T')[0];
