@@ -676,156 +676,173 @@
       };
       
       // Gestion de la soumission du formulaire
-      function setupFormSubmission() {
-        const form = document.getElementById('prospecteur-form');
+function setupFormSubmission() {
+  const form = document.getElementById('prospecteur-form');
+  
+  form.addEventListener('submit', async function(event) {
+    event.preventDefault();
+    
+    // Désactiver le bouton de soumission et afficher l'indicateur de chargement
+    const submitButton = document.getElementById('submit-button');
+    submitButton.disabled = true;
+    submitButton.innerHTML = '<span class="loader"></span> Traitement en cours...';
+    
+    try {
+      // Collecter les données du formulaire de base
+      const formData = new FormData(this);
+      const formObject = {};
+      formData.forEach((value, key) => {
+        formObject[key] = value;
+      });
+      
+      // Ajouter des métadonnées utiles
+      formObject.source = 'formulaire_web';
+      formObject.timestamp = Date.now();
+      formObject.user_agent = navigator.userAgent;
+      formObject.page_url = window.location.href;
+      
+      // Vérifier si c'est une nouvelle entreprise
+      const isNewEnterprise = formObject.nouvelle_entreprise === 'on';
+      
+      // Données de l'entreprise sélectionnée
+      if (!isNewEnterprise && formObject.entreprise) {
+        const enterpriseId = formObject.entreprise;
+        const selectedEnterprise = window.loadedEnterprises?.find(e => 
+          String(e.id) === String(enterpriseId)
+        );
         
-        form.addEventListener('submit', async function(event) {
-          event.preventDefault();
+        if (selectedEnterprise) {
+          // Extraire la commune (peut être un objet ou une chaîne)
+          const commune = typeof selectedEnterprise.commune === 'object' && selectedEnterprise.commune !== null 
+            ? selectedEnterprise.commune.value || '' 
+            : selectedEnterprise.commune || '';
           
-          // Désactiver le bouton de soumission et afficher l'indicateur de chargement
-          const submitButton = document.getElementById('submit-button');
-          submitButton.disabled = true;
-          submitButton.innerHTML = '<span class="loader"></span> Traitement en cours...';
-          
-          try {
-            // Collecter les données du formulaire de base
-            const formData = new FormData(this);
-            const formObject = {};
-            formData.forEach((value, key) => {
-              formObject[key] = value;
-            });
-            
-            // Ajouter des métadonnées utiles
-            formObject.source = 'formulaire_web';
-            formObject.timestamp = Date.now();
-            formObject.user_agent = navigator.userAgent;
-            formObject.page_url = window.location.href;
-            
-            // Vérifier si c'est une nouvelle entreprise
-            const isNewEnterprise = formObject.nouvelle_entreprise === 'on';
-            
-            // Données de l'entreprise sélectionnée
-            if (!isNewEnterprise && formObject.entreprise) {
-              const enterpriseId = formObject.entreprise;
-              const selectedEnterprise = window.loadedEnterprises?.find(e => 
-                String(e.id) === String(enterpriseId)
-              );
-              
-              if (selectedEnterprise) {
-                // Extraire la commune (peut être un objet ou une chaîne)
-                const commune = typeof selectedEnterprise.commune === 'object' && selectedEnterprise.commune !== null 
-                  ? selectedEnterprise.commune.value || '' 
-                  : selectedEnterprise.commune || '';
-                
-                // Format exact attendu par le workflow n8n
-                formObject.nom_entreprise = selectedEnterprise.nom_entreprise || '';
-                formObject.commune_entreprise = commune;
-                formObject.adresse_entreprise = selectedEnterprise.adresse || '';
-                formObject.telephone_entreprise = selectedEnterprise.telephone || selectedEnterprise.portable || '';
-                formObject.email_entreprise = selectedEnterprise.email || '';
-              }
-            }
-            
-            console.log("Données prêtes à envoyer:", formObject);
-            
-            // Envoyer les données au webhook n8n
-            const response = await fetch('https://n8n.dsolution-ia.fr/webhook/gateway-calendrier', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json'
-              },
-              body: JSON.stringify(formObject)
-            });
-            
-            if (!response.ok) {
-              throw new Error(`Erreur lors de l'envoi du formulaire: ${response.status} ${response.statusText}`);
-            }
-            
-            const responseData = await response.json();
-            console.log("Réponse du serveur:", responseData);
-            
-            // Afficher la page de confirmation enrichie
-            showEnhancedConfirmation(formObject, responseData);
-            
-          } catch (error) {
-            console.error('Erreur lors de la soumission:', error);
-            
-            // Réactiver le bouton et indiquer l'erreur
-            submitButton.disabled = false;
-            submitButton.innerHTML = 'CONFIRMER MA PARTICIPATION';
-            
-            // Afficher un message d'erreur à l'utilisateur
-            showErrorMessage("Une erreur est survenue lors de l'envoi du formulaire. Veuillez réessayer.");
-            
-            // Fallback : tentative d'envoi via Netlify Forms si le webhook échoue
-            tryNetlifyFormSubmission(formObject);
-          }
-        });
-      }
-
-      // Fonction pour afficher un message d'erreur
-      function showErrorMessage(message) {
-        // Vérifier si un message d'erreur existe déjà
-        let errorElement = document.getElementById('form-error-message');
-        
-        if (!errorElement) {
-          // Créer un nouvel élément pour le message d'erreur
-          errorElement = document.createElement('div');
-          errorElement.id = 'form-error-message';
-          errorElement.className = 'error-message-global';
-          errorElement.style.color = '#e63946';
-          errorElement.style.backgroundColor = 'rgba(230, 57, 70, 0.1)';
-          errorElement.style.padding = '15px';
-          errorElement.style.borderRadius = '5px';
-          errorElement.style.marginBottom = '20px';
-          errorElement.style.borderLeft = '4px solid #e63946';
-          errorElement.style.fontWeight = 'bold';
-          
-          // Insérer au début du formulaire
-          const form = document.getElementById('prospecteur-form');
-          form.insertBefore(errorElement, form.firstChild);
+          // Format exact attendu par le workflow n8n
+          formObject.nom_entreprise = selectedEnterprise.nom_entreprise || '';
+          formObject.commune_entreprise = commune;
+          formObject.adresse_entreprise = selectedEnterprise.adresse || '';
+          formObject.telephone_entreprise = selectedEnterprise.telephone || selectedEnterprise.portable || '';
+          formObject.email_entreprise = selectedEnterprise.email || '';
         }
-        
-        // Mettre à jour le message
-        errorElement.textContent = message;
-        errorElement.style.display = 'block';
-        
-        // Faire défiler jusqu'au message d'erreur
-        errorElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
+      
+      console.log("Données prêtes à envoyer vers n8n Gateway:", formObject);
+      
+      // ✨ NOUVEAU : Envoyer vers le Gateway n8n au lieu de Netlify
+      const response = await fetch('https://n8n.dsolution-ia.fr/webhook/gateway-calendrier', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Form-Source': 'prospecteur-form',
+          'X-User-Agent': navigator.userAgent
+        },
+        body: JSON.stringify({
+          body: {
+            form_name: 'prospecteur-form',
+            ...formObject  // Spread des données du formulaire
+          },
+          headers: {
+            'user-agent': navigator.userAgent,
+            'referer': window.location.href
+          },
+          source: 'html_form'
+        })
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Erreur lors de l'envoi du formulaire: ${response.status} ${response.statusText}`);
+      }
+      
+      const responseData = await response.json();
+      console.log("Réponse du Gateway n8n:", responseData);
+      
+      // Vérifier si la réponse indique un succès
+      if (responseData.success !== false) {
+        // Afficher la page de confirmation enrichie
+        showEnhancedConfirmation(formObject, responseData);
+      } else {
+        throw new Error(responseData.error || responseData.message || 'Erreur de traitement');
+      }
+      
+    } catch (error) {
+      console.error('Erreur lors de la soumission:', error);
+      
+      // Réactiver le bouton et indiquer l'erreur
+      submitButton.disabled = false;
+      submitButton.innerHTML = 'CONFIRMER MA PARTICIPATION';
+      
+      // Afficher un message d'erreur à l'utilisateur
+      showErrorMessage(`Une erreur est survenue: ${error.message}. Tentative de fallback...`);
+      
+      // Fallback : tentative d'envoi via Netlify Forms si le Gateway échoue
+      tryNetlifyFormSubmission(formObject);
+    }
+  });
+}
 
-      // Fallback vers Netlify Forms
-      function tryNetlifyFormSubmission(formData) {
-        console.log("Tentative de soumission via Netlify Forms...");
-        
-        const netlifyForm = document.createElement('form');
-        netlifyForm.method = 'POST';
-        netlifyForm.action = '/';
-        netlifyForm.setAttribute('data-netlify', 'true');
-        netlifyForm.setAttribute('name', 'prospecteur-form');
-        
-        // Ajouter chaque champ au formulaire Netlify
-        Object.keys(formData).forEach(key => {
-          if (key !== 'form-name' && key !== 'bot-field') {
-            const input = document.createElement('input');
-            input.type = 'hidden';
-            input.name = key;
-            input.value = formData[key];
-            netlifyForm.appendChild(input);
-          }
-        });
-        
-        // Ajouter le champ form-name pour Netlify
-        const formNameInput = document.createElement('input');
-        formNameInput.type = 'hidden';
-        formNameInput.name = 'form-name';
-        formNameInput.value = 'prospecteur-form';
-        netlifyForm.appendChild(formNameInput);
-        
-        // Ajouter et soumettre le formulaire
-        document.body.appendChild(netlifyForm);
-        netlifyForm.submit();
-      }
+// Fonction pour afficher un message d'erreur (à ajouter si pas déjà présente)
+function showErrorMessage(message) {
+  // Vérifier si un message d'erreur existe déjà
+  let errorElement = document.getElementById('form-error-message');
+  
+  if (!errorElement) {
+    // Créer un nouvel élément pour le message d'erreur
+    errorElement = document.createElement('div');
+    errorElement.id = 'form-error-message';
+    errorElement.className = 'error-message-global';
+    errorElement.style.color = '#e63946';
+    errorElement.style.backgroundColor = 'rgba(230, 57, 70, 0.1)';
+    errorElement.style.padding = '15px';
+    errorElement.style.borderRadius = '5px';
+    errorElement.style.marginBottom = '20px';
+    errorElement.style.borderLeft = '4px solid #e63946';
+    errorElement.style.fontWeight = 'bold';
+    
+    // Insérer au début du formulaire
+    const form = document.getElementById('prospecteur-form');
+    form.insertBefore(errorElement, form.firstChild);
+  }
+  
+  // Mettre à jour le message
+  errorElement.textContent = message;
+  errorElement.style.display = 'block';
+  
+  // Faire défiler jusqu'au message d'erreur
+  errorElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// Fallback vers Netlify Forms (garder comme sécurité)
+function tryNetlifyFormSubmission(formData) {
+  console.log("Tentative de soumission via Netlify Forms (fallback)...");
+  
+  const netlifyForm = document.createElement('form');
+  netlifyForm.method = 'POST';
+  netlifyForm.action = '/';
+  netlifyForm.setAttribute('data-netlify', 'true');
+  netlifyForm.setAttribute('name', 'prospecteur-form');
+  
+  // Ajouter chaque champ au formulaire Netlify
+  Object.keys(formData).forEach(key => {
+    if (key !== 'form-name' && key !== 'bot-field') {
+      const input = document.createElement('input');
+      input.type = 'hidden';
+      input.name = key;
+      input.value = formData[key];
+      netlifyForm.appendChild(input);
+    }
+  });
+  
+  // Ajouter le champ form-name pour Netlify
+  const formNameInput = document.createElement('input');
+  formNameInput.type = 'hidden';
+  formNameInput.name = 'form-name';
+  formNameInput.value = 'prospecteur-form';
+  netlifyForm.appendChild(formNameInput);
+  
+  // Ajouter et soumettre le formulaire
+  document.body.appendChild(netlifyForm);
+  netlifyForm.submit();
+}
 
       // Afficher une confirmation enrichie
       function showEnhancedConfirmation(formData, responseData) {
