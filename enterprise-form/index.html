@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Commander Votre Encart - Calendrier 2026 Sapeurs-Pompiers</title>
+  <link rel="stylesheet" href="../assets/css/main.css">
+  <link rel="stylesheet" href="../assets/css/enterprise-form.css">
+</head>
+<body>
+  <div class="container">
+    <div class="form-container">
+      <header>
+        <img src="https://s3.dsolution-ia.fr/logos/logo-pompier.png" alt="Logo Sapeurs-Pompiers" class="logo">
+        <div class="header-content">
+          <h1>Votre Encart Publicitaire</h1>
+          <p>Calendrier 2026 des Sapeurs-Pompiers</p>
+        </div>
+      </header>
+      
+      <div class="progress-bar">
+        <div class="progress" id="progressBar"></div>
+      </div>
+      
+      <!-- ÉTAPE 1: INFORMATIONS ENTREPRISE -->
+      <form id="adForm" name="enterprise-form" method="POST" data-netlify="true" netlify-honeypot="bot-field">
+        <!-- Champs cachés pour Netlify -->
+        <input type="hidden" name="form-name" value="enterprise-form">
+        <p class="hidden">
+          <label>Ne pas remplir si vous êtes humain : <input name="bot-field"></label>
+        </p>
+        
+        <div class="form-step active" id="step1">
+          <h2 class="step-title">Étape 1: Vos Informations</h2>
+          
+          <div class="form-group">
+            <label for="entrepriseName">Nom de l'entreprise</label>
+            <input type="text" id="entrepriseName" name="entrepriseName" class="readonly" readonly>
+          </div>
+          
+          <div class="form-group">
+            <label for="adresse">Adresse</label>
+            <input type="text" id="adresse" name="adresse" class="readonly" readonly>
+          </div>
+          
+          <div class="form-group">
+            <label for="contactName">Nom du contact</label>
+            <input type="text" id="contactName" name="contactName" required>
+            <div class="error-message" id="contactNameError">Veuillez indiquer un nom de contact</div>
+          </div>
+          
+          <div class="form-group">
+            <label for="email">Email de contact</label>
+            <input type="email" id="email" name="email" required>
+            <div class="error-message" id="emailError">Veuillez indiquer un email valide</div>
+          </div>
+          
+          <div class="form-group">
+            <label for="telephone">Téléphone</label>
+            <input type="tel" id="telephone" name="telephone" required>
+            <div class="error-message" id="telephoneError">Veuillez indiquer un numéro de téléphone valide</div>
+          </div>
+          
+          <div class="navigation-buttons">
+            <div></div>
+            <button type="button" class="btn btn-next" id="nextToStep2">Suivant</button>
+          </div>
+        </div>
+        
+        <!-- ÉTAPE 2: CHOIX DU FORMAT -->
+        <div class="form-step" id="step2">
+          <h2 class="step-title">Étape 2: Format de votre Encart</h2>
+          
+          <p>Sélectionnez le format qui convient le mieux à vos besoins:</p>
+          
+          <div class="format-options">
+            <div class="format-option" data-format="6X4" data-price="350">
+              <img src="https://placeholder.pics/svg/180x120/DEDEDE/555555/Format%206x4cm" alt="Format 6x4cm">
+              <div class="option-title">Format 6x4cm</div>
+              <div class="option-price">350€</div>
+              <div class="option-desc">Format carte de visite standard</div>
+            </div>
+            
+            <div class="format-option" data-format="6X8" data-price="500">
+              <img src="https://placeholder.pics/svg/180x240/DEDEDE/555555/Format%206x8cm" alt="Format 6x8cm">
+              <div class="option-title">Format 6x8cm</div>
+              <div class="option-price">500€</div>
+              <div class="option-desc">Visibilité améliorée</div>
+            </div>
+            
+            <div class="format-option" data-format="12X4" data-price="500">
+              <img src="https://placeholder.pics/svg/360x120/DEDEDE/555555/Format%2012x4cm" alt="Format 12x4cm">
+              <div class="option-title">Format Bandeau 12x4cm</div>
+              <div class="option-price">500€</div>
+              <div class="option-desc">Format horizontal premium</div>
+            </div>
+          </div>
+          
+          <div class="format-options" style="margin-top: 30px;">
+            <div class="format-option" data-format="12PARUTIONS" data-price="1800" data-annual="true">
+              <img src="https://placeholder.pics/svg/180x240/DEDEDE/555555/12%20Parutions" alt="12 Parutions">
+              <div class="option-title">Offre Annuelle</div>
+              <div style="text-decoration: line-through; color: #888; font-size: 16px;">4200€</div>
+              <div class="option-price">1800€</div>
+              <div class="option-desc">Format 6x4 sur les 12 mois de l'année</div>
+              <div style="background: #e63946; color: white; padding: 5px; border-radius: 4px; margin-top: 5px; font-weight: bold;">Économisez 57%</div>
+            </div>
+          </div>
+          
+          <input type="hidden" id="selectedFormat" name="selectedFormat">
+          <input type="hidden" id="formatPrice" name="formatPrice">
+          <div class="error-message" id="formatError">Veuillez sélectionner un format d'encart</div>
+          
+          <div class="navigation-buttons">
+            <button type="button" class="btn btn-prev" id="prevToStep1">Retour</button>
+            <button type="button" class="btn btn-next" id="nextToStep3">Suivant</button>
+          </div>
+        </div>
+        
+        <!-- ÉTAPE 3: CHOIX DES MOIS -->
+        <div class="form-step" id="step3">
+          <h2 class="step-title">Étape 3: Mois de Parution</h2>
+          
+          <p id="monthSelectionText">Sélectionnez le mois pour lequel vous souhaitez que votre encart apparaisse:</p>
+          <p id="annualText" style="display:none;"><strong>Félicitations !</strong> Vous avez choisi l'offre annuelle. Votre encart apparaîtra sur les 12 mois de l'année 2026.</p>
+          
+          <div class="month-selector" id="monthSelector">
+            <div class="months-grid">
+              <div class="month-btn" data-month="Janvier">Janvier</div>
+              <div class="month-btn" data-month="Février">Février</div>
+              <div class="month-btn" data-month="Mars">Mars</div>
+              <div class="month-btn" data-month="Avril">Avril</div>
+              <div class="month-btn" data-month="Mai">Mai</div>
+              <div class="month-btn" data-month="Juin">Juin</div>
+              <div class="month-btn" data-month="Juillet">Juillet</div>
+              <div class="month-btn" data-month="Août">Août</div>
+              <div class="month-btn" data-month="Septembre">Septembre</div>
+              <div class="month-btn" data-month="Octobre">Octobre</div>
+              <div class="month-btn" data-month="Novembre">Novembre</div>
+              <div class="month-btn" data-month="Décembre">Décembre</div>
+            </div>
+          </div>
+          
+          <div class="form-group multiple-months" style="margin-top: 25px;">
+            <label for="nombreParutions">Nombre de mois</label>
+            <input type="number" id="nombreParutions" name="nombreParutions" min="1" max="12" value="1" disabled>
+            <div class="info-tooltip" data-tooltip="Changez cette valeur si vous souhaitez apparaître sur plusieurs mois (non consécutifs).">?</div>
+          </div>
+          
+          <input type="hidden" id="selectedMonths" name="selectedMonths">
+          <div class="error-message" id="monthError">Veuillez sélectionner au moins un mois de parution</div>
+          
+          <div class="navigation-buttons">
+            <button type="button" class="btn btn-prev" id="prevToStep2">Retour</button>
+            <button type="button" class="btn btn-next" id="nextToStep4">Suivant</button>
+          </div>
+        </div>
+        
+d="selectedPayment" name="selectedPayment">
+          <div class="error-message" id="paymentError">Veuillez sélectionner un mode de paiement</div>
+          
+          <div class="form-group" style="margin-top: 30px;">
+            <label for="commentaires">Commentaires ou demandes spéciales</label>
+            <textarea id="commentaires" name="commentaires" rows="3"></textarea>
+          </div>
+          
+          <div class="terms-checkbox">
+            <input type="checkbox" id="termsAccepted" name="termsAccepted" required>
+            <label for="termsAccepted">En confirmant cette commande, j'accepte les conditions générales et j'autorise l'Amicale des Sapeurs-Pompiers de Clermont l'Hérault à utiliser mes coordonnées et à publier mon encart publicitaire dans le calendrier 2026.</label>
+          </div>
+          <div class="error-message" id="termsError">Vous devez accepter les conditions pour continuer</div>
+          
+          <div class="summary-box">
+            <div class="summary-title">Récapitulatif de votre commande</div>
+            
+            <div class="summary-row">
+              <div class="summary-label">Format:</div>
+              <div class="summary-value" id="summaryFormat">-</div>
+            </div>
+            
+            <div class="summary-row">
+              <div class="summary-label">Mois:</div>
+              <div class="summary-value" id="summaryMonths">-</div>
+            </div>
+            
+            <div class="summary-row">
+              <div class="summary-label">Nombre de parutions:</div>
+              <div class="summary-value" id="summaryParutions">1</div>
+            </div>
+            
+            <div class="summary-total">
+              <div class="summary-row">
+                <div class="summary-label">Total:</div>
+                <div class="summary-value" id="summaryTotal">0 €</div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="navigation-buttons">
+            <button type="button" class="btn btn-prev" id="prevToStep3">Retour</button>
+            <button type="submit" class="btn btn-submit">Confirmer ma commande</button>
+          </div>
+        </div>
+        
+        <!-- CONFIRMATION -->
+        <div class="form-step" id="confirmation">
+          <div class="confirmation-banner">
+            <i>✓</i> Votre commande a été enregistrée avec succès !
+          </div>
+          
+          <h2 class="step-title">Confirmation de Commande</h2>
+          
+          <p>Merci d'avoir commandé un encart publicitaire pour le calendrier 2026 des Sapeurs-Pompiers de Clermont l'Hérault.</p>
+          
+          <div class="summary-box">
+            <div class="summary-title">Votre commande</div>
+            
+            <div class="summary-row">
+              <div class="summary-label">N° de commande:</div>
+              <div class="summary-value" id="confirmationOrderNumber">CMD-2026-XXXXX</div>
+            </div>
+            
+            <div class="summary-row">
+              <div class="summary-label">Format:</div>
+              <div class="summary-value" id="confirmationFormat">-</div>
+            </div>
+            
+            <div class="summary-row">
+              <div class="summary-label">Mois:</div>
+              <div class="summary-value" id="confirmationMonths">-</div>
+            </div>
+            
+            <div class="summary-row">
+              <div class="summary-label">Paiement:</div>
+              <div class="summary-value" id="confirmationPayment">-</div>
+            </div>
+            
+            <div class="summary-total">
+              <div class="summary-row">
+                <div class="summary-label">Total:</div>
+                <div class="summary-value" id="confirmationTotal">0 €</div>
+              </div>
+            </div>
+          </div>
+          
+          <p style="margin-top: 30px;">Un email de confirmation vient de vous être envoyé avec tous les détails de votre commande.</p>
+          
+          <p>Prochaines étapes:</p>
+          <ol style="margin-left: 20px; margin-top: 10px;">
+            <li>Vous recevrez un <strong>Bon à Tirer (BAT)</strong> dans les prochains jours</li>
+            <li>Après validation du BAT, nous procéderons à l'impression</li>
+            <li>Votre encart apparaîtra dans le calendrier 2026</li>
+          </ol>
+          
+          <p style="margin-top: 20px;">Pour toute question, n'hésitez pas à contacter l'Amicale:</p>
+          <p><strong>Email:</strong> contact@pompiers34800.com</p>
+          <p><strong>Téléphone:</strong> 04.67.44.99.70</p>
+          
+          <div style="text-align: center; margin-top: 40px;">
+            <p>Merci pour votre soutien !</p>
+            <p style="margin-top: 5px; color: #666; font-size: 14px;">L'Amicale des Sapeurs-Pompiers de Clermont l'Hérault</p>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+  
+  <script src="../assets/js/main.js" defer></script>
+  <script src="../assets/js/enterprise-form.js" defer></script>
+</body>
+</html>
