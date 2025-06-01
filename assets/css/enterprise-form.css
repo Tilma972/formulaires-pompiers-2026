@@ -1,5 +1,10 @@
 /* Styles spécifiques au formulaire enterprise-form qui complètent main.css */
 
+/* Variables CSS supplémentaires */
+:root {
+  --success: #4caf50;
+}
+
 /* Barre de progression des étapes */
 .progress-container {
   margin: 20px 0 30px;
@@ -188,6 +193,13 @@
   color: #999;
   cursor: not-allowed;
   text-decoration: line-through;
+  opacity: 0.6;
+}
+
+.month-card.unavailable:hover {
+  background-color: #f5f5f5;
+  border-color: #ddd;
+  transform: none;
 }
 
 /* Grille des paiements */

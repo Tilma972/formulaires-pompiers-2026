@@ -159,32 +159,37 @@ document.addEventListener('DOMContentLoaded', function() {
     showStep(3);
   });
   
-  // Gestion sélection mois
+  // Gestion sélection mois - Fonction similaire au formulaire qualification
+  function toggleMonth(element) {
+    if (element.classList.contains('unavailable')) return;
+    
+    const month = element.getAttribute('data-month');
+    const maxParutions = parseInt(document.getElementById('nombre_parutions').value) || 1;
+    
+    if (element.classList.contains('selected')) {
+      // Désélectionner
+      element.classList.remove('selected');
+      selectedMonths = selectedMonths.filter(m => m !== month);
+    } else {
+      // Sélectionner si possible
+      if (selectedMonths.length < maxParutions) {
+        element.classList.add('selected');
+        selectedMonths.push(month);
+      } else {
+        alert(`Vous ne pouvez sélectionner que ${maxParutions} mois. Augmentez le nombre de parutions si nécessaire.`);
+        return;
+      }
+    }
+    
+    document.getElementById('selected_months').value = selectedMonths.join(',');
+    document.getElementById('month-error').style.display = 'none';
+    updateSummary();
+  }
+  
+  // Attacher les événements aux cartes de mois
   document.querySelectorAll('.month-card').forEach(card => {
     card.addEventListener('click', function() {
-      if (this.classList.contains('unavailable')) return;
-      
-      const month = this.getAttribute('data-month');
-      const maxParutions = parseInt(document.getElementById('nombre_parutions').value) || 1;
-      
-      if (this.classList.contains('selected')) {
-        // Désélectionner
-        this.classList.remove('selected');
-        selectedMonths = selectedMonths.filter(m => m !== month);
-      } else {
-        // Sélectionner si possible
-        if (selectedMonths.length < maxParutions) {
-          this.classList.add('selected');
-          selectedMonths.push(month);
-        } else {
-          alert(`Vous ne pouvez sélectionner que ${maxParutions} mois. Augmentez le nombre de parutions si nécessaire.`);
-          return;
-        }
-      }
-      
-      document.getElementById('selected_months').value = selectedMonths.join(',');
-      document.getElementById('month-error').style.display = 'none';
-      updateSummary();
+      toggleMonth(this);
     });
   });
   
