@@ -4,264 +4,394 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Commander Votre Encart - Calendrier 2026 Sapeurs-Pompiers</title>
-  <link rel="stylesheet" href="../assets/css/main.css">
-  <link rel="stylesheet" href="../assets/css/enterprise-form.css">
+  <link rel="stylesheet" href="../assets/css/main.css" />
 </head>
 <body>
   <div class="container">
-    <div class="form-container">
-      <header>
-        <img src="https://s3.dsolution-ia.fr/logos/logo-pompier.png" alt="Logo Sapeurs-Pompiers" class="logo">
-        <div class="header-content">
-          <h1>Votre Encart Publicitaire</h1>
-          <p>Calendrier 2026 des Sapeurs-Pompiers</p>
-        </div>
-      </header>
-      
-      <div class="progress-bar">
-        <div class="progress" id="progressBar"></div>
+    <header>
+      <img src="https://s3.dsolution-ia.fr/logos/logo-pompier.png" alt="Logo Sapeurs-Pompiers" class="logo">
+      <div>
+        <h1>Commander Votre Encart Publicitaire</h1>
+        <p class="subtitle">Calendrier 2026 des Sapeurs-Pompiers de Clermont-l'Hérault</p>
       </div>
+    </header>
+    
+    <div class="intro">
+      <h2>Finalisez votre commande d'encart publicitaire</h2>
+      <p>Complétez les informations ci-dessous pour confirmer votre participation au calendrier 2026 des Sapeurs-Pompiers.</p>
+    </div>
+    
+    <!-- Barre de progression -->
+    <div class="progress-container">
+      <div class="progress-bar">
+        <div class="progress-step active" data-step="1">
+          <div class="step-number">1</div>
+          <div class="step-label">Informations</div>
+        </div>
+        <div class="progress-step" data-step="2">
+          <div class="step-number">2</div>
+          <div class="step-label">Format</div>
+        </div>
+        <div class="progress-step" data-step="3">
+          <div class="step-number">3</div>
+          <div class="step-label">Mois</div>
+        </div>
+        <div class="progress-step" data-step="4">
+          <div class="step-number">4</div>
+          <div class="step-label">Paiement</div>
+        </div>
+      </div>
+    </div>
+    
+    <form id="enterprise-form" name="enterprise-form" method="POST" data-netlify="true" netlify-honeypot="bot-field">
+      <!-- Champs cachés pour Netlify -->
+      <input type="hidden" name="form-name" value="enterprise-form">
+      <p class="hidden">
+        <label>Ne pas remplir si vous êtes humain : <input name="bot-field"></label>
+      </p>
       
       <!-- ÉTAPE 1: INFORMATIONS ENTREPRISE -->
-      <form id="adForm" name="enterprise-form" method="POST" data-netlify="true" netlify-honeypot="bot-field">
-        <!-- Champs cachés pour Netlify -->
-        <input type="hidden" name="form-name" value="enterprise-form">
-        <p class="hidden">
-          <label>Ne pas remplir si vous êtes humain : <input name="bot-field"></label>
-        </p>
+      <div class="form-section active" id="step-1">
+        <div class="section-title">ÉTAPE 1 : VOS INFORMATIONS</div>
         
-        <div class="form-step active" id="step1">
-          <h2 class="step-title">Étape 1: Vos Informations</h2>
-          
-          <div class="form-group">
-            <label for="entrepriseName">Nom de l'entreprise</label>
-            <input type="text" id="entrepriseName" name="entrepriseName" class="readonly" readonly>
+        <div class="form-row">
+          <label for="entreprise_name">Nom de l'entreprise</label>
+          <input type="text" id="entreprise_name" name="entreprise_name" readonly style="background-color: #f5f5f5;">
+        </div>
+        
+        <div class="form-row">
+          <label for="adresse">Adresse</label>
+          <input type="text" id="adresse" name="adresse" readonly style="background-color: #f5f5f5;">
+        </div>
+        
+        <div class="form-row">
+          <label for="contact_name">Nom du contact *</label>
+          <input type="text" id="contact_name" name="contact_name" required>
+          <div class="error-message" id="contact-error">Veuillez indiquer un nom de contact</div>
+        </div>
+        
+        <div class="form-row">
+          <label for="email">Email de contact *</label>
+          <input type="email" id="email" name="email" required>
+          <div class="error-message" id="email-error">Veuillez indiquer un email valide</div>
+        </div>
+        
+        <div class="form-row">
+          <label for="telephone">Téléphone *</label>
+          <input type="tel" id="telephone" name="telephone" required>
+          <div class="error-message" id="telephone-error">Veuillez indiquer un numéro de téléphone valide</div>
+        </div>
+        
+        <button type="button" class="submit-btn" id="next-step-1">SUIVANT</button>
+      </div>
+      
+      <!-- ÉTAPE 2: CHOIX DU FORMAT -->
+      <div class="form-section" id="step-2">
+        <div class="section-title">ÉTAPE 2 : CHOIX DU FORMAT</div>
+        
+        <p>Sélectionnez le format qui convient le mieux à vos besoins :</p>
+        
+        <div class="format-grid">
+          <div class="format-card" data-format="6X4" data-price="350">
+            <div class="format-image">
+              <img src="https://placeholder.pics/svg/120x80/DEDEDE/555555/6x4cm" alt="Format 6x4cm">
+            </div>
+            <div class="format-info">
+              <h3>Format 6x4cm</h3>
+              <div class="format-price">350€</div>
+              <p>Format carte de visite standard</p>
+            </div>
           </div>
           
-          <div class="form-group">
-            <label for="adresse">Adresse</label>
-            <input type="text" id="adresse" name="adresse" class="readonly" readonly>
+          <div class="format-card" data-format="6X8" data-price="500">
+            <div class="format-image">
+              <img src="https://placeholder.pics/svg/120x160/DEDEDE/555555/6x8cm" alt="Format 6x8cm">
+            </div>
+            <div class="format-info">
+              <h3>Format 6x8cm</h3>
+              <div class="format-price">500€</div>
+              <p>Visibilité améliorée</p>
+            </div>
           </div>
           
-          <div class="form-group">
-            <label for="contactName">Nom du contact</label>
-            <input type="text" id="contactName" name="contactName" required>
-            <div class="error-message" id="contactNameError">Veuillez indiquer un nom de contact</div>
+          <div class="format-card" data-format="12X4" data-price="500">
+            <div class="format-image">
+              <img src="https://placeholder.pics/svg/240x80/DEDEDE/555555/12x4cm" alt="Format 12x4cm">
+            </div>
+            <div class="format-info">
+              <h3>Format Bandeau 12x4cm</h3>
+              <div class="format-price">500€</div>
+              <p>Format horizontal premium</p>
+            </div>
           </div>
           
-          <div class="form-group">
-            <label for="email">Email de contact</label>
-            <input type="email" id="email" name="email" required>
-            <div class="error-message" id="emailError">Veuillez indiquer un email valide</div>
-          </div>
-          
-          <div class="form-group">
-            <label for="telephone">Téléphone</label>
-            <input type="tel" id="telephone" name="telephone" required>
-            <div class="error-message" id="telephoneError">Veuillez indiquer un numéro de téléphone valide</div>
-          </div>
-          
-          <div class="navigation-buttons">
-            <div></div>
-            <button type="button" class="btn btn-next" id="nextToStep2">Suivant</button>
+          <div class="format-card special" data-format="12PARUTIONS" data-price="1800" data-annual="true">
+            <div class="special-badge">PROMO</div>
+            <div class="format-image">
+              <img src="https://placeholder.pics/svg/120x160/E63946/FFFFFF/12%20mois" alt="12 Parutions">
+            </div>
+            <div class="format-info">
+              <h3>Offre Annuelle</h3>
+              <div class="old-price">4200€</div>
+              <div class="format-price">1800€</div>
+              <p>Format 6x4 sur 12 mois</p>
+              <div class="savings">Économisez 57%</div>
+            </div>
           </div>
         </div>
         
-        <!-- ÉTAPE 2: CHOIX DU FORMAT -->
-        <div class="form-step" id="step2">
-          <h2 class="step-title">Étape 2: Format de votre Encart</h2>
-          
-          <p>Sélectionnez le format qui convient le mieux à vos besoins:</p>
-          
-          <div class="format-options">
-            <div class="format-option" data-format="6X4" data-price="350">
-              <img src="https://placeholder.pics/svg/180x120/DEDEDE/555555/Format%206x4cm" alt="Format 6x4cm">
-              <div class="option-title">Format 6x4cm</div>
-              <div class="option-price">350€</div>
-              <div class="option-desc">Format carte de visite standard</div>
-            </div>
-            
-            <div class="format-option" data-format="6X8" data-price="500">
-              <img src="https://placeholder.pics/svg/180x240/DEDEDE/555555/Format%206x8cm" alt="Format 6x8cm">
-              <div class="option-title">Format 6x8cm</div>
-              <div class="option-price">500€</div>
-              <div class="option-desc">Visibilité améliorée</div>
-            </div>
-            
-            <div class="format-option" data-format="12X4" data-price="500">
-              <img src="https://placeholder.pics/svg/360x120/DEDEDE/555555/Format%2012x4cm" alt="Format 12x4cm">
-              <div class="option-title">Format Bandeau 12x4cm</div>
-              <div class="option-price">500€</div>
-              <div class="option-desc">Format horizontal premium</div>
-            </div>
-          </div>
-          
-          <div class="format-options" style="margin-top: 30px;">
-            <div class="format-option" data-format="12PARUTIONS" data-price="1800" data-annual="true">
-              <img src="https://placeholder.pics/svg/180x240/DEDEDE/555555/12%20Parutions" alt="12 Parutions">
-              <div class="option-title">Offre Annuelle</div>
-              <div style="text-decoration: line-through; color: #888; font-size: 16px;">4200€</div>
-              <div class="option-price">1800€</div>
-              <div class="option-desc">Format 6x4 sur les 12 mois de l'année</div>
-              <div style="background: #e63946; color: white; padding: 5px; border-radius: 4px; margin-top: 5px; font-weight: bold;">Économisez 57%</div>
-            </div>
-          </div>
-          
-          <input type="hidden" id="selectedFormat" name="selectedFormat">
-          <input type="hidden" id="formatPrice" name="formatPrice">
-          <div class="error-message" id="formatError">Veuillez sélectionner un format d'encart</div>
-          
-          <div class="navigation-buttons">
-            <button type="button" class="btn btn-prev" id="prevToStep1">Retour</button>
-            <button type="button" class="btn btn-next" id="nextToStep3">Suivant</button>
+        <input type="hidden" id="selected_format" name="selected_format">
+        <input type="hidden" id="format_price" name="format_price">
+        <div class="error-message" id="format-error">Veuillez sélectionner un format d'encart</div>
+        
+        <div class="navigation-buttons">
+          <button type="button" class="submit-btn secondary" id="prev-step-2">RETOUR</button>
+          <button type="button" class="submit-btn" id="next-step-2">SUIVANT</button>
+        </div>
+      </div>
+      
+      <!-- ÉTAPE 3: CHOIX DES MOIS -->
+      <div class="form-section" id="step-3">
+        <div class="section-title">ÉTAPE 3 : MOIS DE PARUTION</div>
+        
+        <div id="month-selection-text">
+          <p>Sélectionnez le ou les mois pour lesquels vous souhaitez que votre encart apparaisse :</p>
+        </div>
+        
+        <div id="annual-text" style="display: none;">
+          <p><strong>Félicitations !</strong> Vous avez choisi l'offre annuelle. Votre encart apparaîtra sur les 12 mois de l'année 2026.</p>
+        </div>
+        
+        <div id="month-selector">
+          <div class="month-grid">
+            <div class="month-card" data-month="Janvier">Janvier</div>
+            <div class="month-card" data-month="Février">Février</div>
+            <div class="month-card" data-month="Mars">Mars</div>
+            <div class="month-card" data-month="Avril">Avril</div>
+            <div class="month-card" data-month="Mai">Mai</div>
+            <div class="month-card" data-month="Juin">Juin</div>
+            <div class="month-card" data-month="Juillet">Juillet</div>
+            <div class="month-card" data-month="Août">Août</div>
+            <div class="month-card" data-month="Septembre">Septembre</div>
+            <div class="month-card" data-month="Octobre">Octobre</div>
+            <div class="month-card" data-month="Novembre">Novembre</div>
+            <div class="month-card" data-month="Décembre">Décembre</div>
           </div>
         </div>
         
-        <!-- ÉTAPE 3: CHOIX DES MOIS -->
-        <div class="form-step" id="step3">
-          <h2 class="step-title">Étape 3: Mois de Parution</h2>
-          
-          <p id="monthSelectionText">Sélectionnez le mois pour lequel vous souhaitez que votre encart apparaisse:</p>
-          <p id="annualText" style="display:none;"><strong>Félicitations !</strong> Vous avez choisi l'offre annuelle. Votre encart apparaîtra sur les 12 mois de l'année 2026.</p>
-          
-          <div class="month-selector" id="monthSelector">
-            <div class="months-grid">
-              <div class="month-btn" data-month="Janvier">Janvier</div>
-              <div class="month-btn" data-month="Février">Février</div>
-              <div class="month-btn" data-month="Mars">Mars</div>
-              <div class="month-btn" data-month="Avril">Avril</div>
-              <div class="month-btn" data-month="Mai">Mai</div>
-              <div class="month-btn" data-month="Juin">Juin</div>
-              <div class="month-btn" data-month="Juillet">Juillet</div>
-              <div class="month-btn" data-month="Août">Août</div>
-              <div class="month-btn" data-month="Septembre">Septembre</div>
-              <div class="month-btn" data-month="Octobre">Octobre</div>
-              <div class="month-btn" data-month="Novembre">Novembre</div>
-              <div class="month-btn" data-month="Décembre">Décembre</div>
-            </div>
+        <div class="form-row" id="parutions-row">
+          <label for="nombre_parutions">Nombre de parutions</label>
+          <input type="number" id="nombre_parutions" name="nombre_parutions" min="1" max="12" value="1">
+        </div>
+        
+        <input type="hidden" id="selected_months" name="selected_months">
+        <div class="error-message" id="month-error">Veuillez sélectionner au moins un mois de parution</div>
+        
+        <div class="navigation-buttons">
+          <button type="button" class="submit-btn secondary" id="prev-step-3">RETOUR</button>
+          <button type="button" class="submit-btn" id="next-step-3">SUIVANT</button>
+        </div>
+      </div>
+      
+      <!-- ÉTAPE 4: MODE DE PAIEMENT -->
+      <div class="form-section" id="step-4">
+        <div class="section-title">ÉTAPE 4 : MODE DE PAIEMENT</div>
+        
+        <p>Choisissez votre méthode de paiement préférée :</p>
+        
+        <div class="payment-grid">
+          <div class="payment-card" data-payment="Virement" data-details="virement">
+            <div class="payment-icon">💸</div>
+            <h3>Virement Bancaire</h3>
+            <p>Paiement sécurisé par virement</p>
           </div>
           
-          <div class="form-group multiple-months" style="margin-top: 25px;">
-            <label for="nombreParutions">Nombre de mois</label>
-            <input type="number" id="nombreParutions" name="nombreParutions" min="1" max="12" value="1" disabled>
-            <div class="info-tooltip" data-tooltip="Changez cette valeur si vous souhaitez apparaître sur plusieurs mois (non consécutifs).">?</div>
+          <div class="payment-card" data-payment="Cheque_Remise" data-details="cheque-remise">
+            <div class="payment-icon">🤝</div>
+            <h3>Chèque - Remise main propre</h3>
+            <p>Rendez-vous à convenir</p>
           </div>
           
-          <input type="hidden" id="selectedMonths" name="selectedMonths">
-          <div class="error-message" id="monthError">Veuillez sélectionner au moins un mois de parution</div>
+          <div class="payment-card" data-payment="Cheque_Poste" data-details="cheque-poste">
+            <div class="payment-icon">📮</div>
+            <h3>Chèque - Envoi postal</h3>
+            <p>Envoi par courrier</p>
+          </div>
           
-          <div class="navigation-buttons">
-            <button type="button" class="btn btn-prev" id="prevToStep2">Retour</button>
-            <button type="button" class="btn btn-next" id="nextToStep4">Suivant</button>
+          <div class="payment-card" data-payment="Cheque_Caserne" data-details="cheque-caserne">
+            <div class="payment-icon">🏠</div>
+            <h3>Chèque - Dépôt caserne</h3>
+            <p>Dépôt boîte aux lettres</p>
           </div>
         </div>
         
-d="selectedPayment" name="selectedPayment">
-          <div class="error-message" id="paymentError">Veuillez sélectionner un mode de paiement</div>
-          
-          <div class="form-group" style="margin-top: 30px;">
-            <label for="commentaires">Commentaires ou demandes spéciales</label>
-            <textarea id="commentaires" name="commentaires" rows="3"></textarea>
-          </div>
-          
-          <div class="terms-checkbox">
-            <input type="checkbox" id="termsAccepted" name="termsAccepted" required>
-            <label for="termsAccepted">En confirmant cette commande, j'accepte les conditions générales et j'autorise l'Amicale des Sapeurs-Pompiers de Clermont l'Hérault à utiliser mes coordonnées et à publier mon encart publicitaire dans le calendrier 2026.</label>
-          </div>
-          <div class="error-message" id="termsError">Vous devez accepter les conditions pour continuer</div>
-          
-          <div class="summary-box">
-            <div class="summary-title">Récapitulatif de votre commande</div>
-            
-            <div class="summary-row">
-              <div class="summary-label">Format:</div>
-              <div class="summary-value" id="summaryFormat">-</div>
-            </div>
-            
-            <div class="summary-row">
-              <div class="summary-label">Mois:</div>
-              <div class="summary-value" id="summaryMonths">-</div>
-            </div>
-            
-            <div class="summary-row">
-              <div class="summary-label">Nombre de parutions:</div>
-              <div class="summary-value" id="summaryParutions">1</div>
-            </div>
-            
-            <div class="summary-total">
-              <div class="summary-row">
-                <div class="summary-label">Total:</div>
-                <div class="summary-value" id="summaryTotal">0 €</div>
+        <!-- Détails Virement -->
+        <div id="virement-details" class="payment-details" style="display: none;">
+          <div class="bank-info-section">
+            <div class="section-title">COORDONNÉES BANCAIRES</div>
+            <div class="bank-details">
+              <div class="bank-row">
+                <span class="label">IBAN :</span>
+                <span class="value">FR76 1005 7190 3500 0142 6170 134</span>
+              </div>
+              <div class="bank-row">
+                <span class="label">BIC :</span>
+                <span class="value">CMCIFRPP</span>
+              </div>
+              <div class="bank-row">
+                <span class="label">Titulaire :</span>
+                <span class="value">AMICALE DES SAPEURS POMPIERS</span>
+              </div>
+              <div class="bank-row">
+                <span class="label">Banque :</span>
+                <span class="value">CIC CLERMONT L'HÉRAULT</span>
               </div>
             </div>
-          </div>
-          
-          <div class="navigation-buttons">
-            <button type="button" class="btn btn-prev" id="prevToStep3">Retour</button>
-            <button type="submit" class="btn btn-submit">Confirmer ma commande</button>
+            <div class="bank-note">
+              <strong>Important :</strong> Indiquez votre nom d'entreprise et le numéro de commande dans le libellé du virement.
+            </div>
           </div>
         </div>
         
-        <!-- CONFIRMATION -->
-        <div class="form-step" id="confirmation">
-          <div class="confirmation-banner">
-            <i>✓</i> Votre commande a été enregistrée avec succès !
+        <!-- Détails Chèque Remise -->
+        <div id="cheque-remise-details" class="payment-details" style="display: none;">
+          <div class="form-row">
+            <label for="rdv_preference">Préférence pour le rendez-vous :</label>
+            <select id="rdv_preference" name="rdv_preference">
+              <option value="">-- Sélectionnez --</option>
+              <option value="Semaine matin">En semaine - Matin (9h-12h)</option>
+              <option value="Semaine après-midi">En semaine - Après-midi (14h-17h)</option>
+              <option value="Samedi matin">Samedi matin (9h-12h)</option>
+              <option value="À convenir">À convenir par téléphone</option>
+            </select>
           </div>
-          
-          <h2 class="step-title">Confirmation de Commande</h2>
-          
-          <p>Merci d'avoir commandé un encart publicitaire pour le calendrier 2026 des Sapeurs-Pompiers de Clermont l'Hérault.</p>
-          
-          <div class="summary-box">
-            <div class="summary-title">Votre commande</div>
-            
-            <div class="summary-row">
-              <div class="summary-label">N° de commande:</div>
-              <div class="summary-value" id="confirmationOrderNumber">CMD-2026-XXXXX</div>
+          <p class="info-text">Un membre de l'Amicale vous contactera pour fixer le rendez-vous.</p>
+        </div>
+        
+        <!-- Détails Chèque Postal -->
+        <div id="cheque-poste-details" class="payment-details" style="display: none;">
+          <div class="address-section">
+            <div class="section-title">ADRESSE D'ENVOI</div>
+            <div class="address-info">
+              <strong>Amicale des Sapeurs-Pompiers<br>
+              Calendrier 2026<br>
+              15 Rue Sauvignon<br>
+              34800 CLERMONT L'HÉRAULT</strong>
             </div>
-            
-            <div class="summary-row">
-              <div class="summary-label">Format:</div>
-              <div class="summary-value" id="confirmationFormat">-</div>
+            <div class="payment-note">
+              <strong>Chèque à l'ordre de :</strong> "Amicale des Sapeurs-Pompiers"<br>
+              <strong>Mentionnez au dos :</strong> Votre nom d'entreprise et le numéro de commande
             </div>
-            
-            <div class="summary-row">
-              <div class="summary-label">Mois:</div>
-              <div class="summary-value" id="confirmationMonths">-</div>
-            </div>
-            
-            <div class="summary-row">
-              <div class="summary-label">Paiement:</div>
-              <div class="summary-value" id="confirmationPayment">-</div>
-            </div>
-            
-            <div class="summary-total">
-              <div class="summary-row">
-                <div class="summary-label">Total:</div>
-                <div class="summary-value" id="confirmationTotal">0 €</div>
-              </div>
-            </div>
-          </div>
-          
-          <p style="margin-top: 30px;">Un email de confirmation vient de vous être envoyé avec tous les détails de votre commande.</p>
-          
-          <p>Prochaines étapes:</p>
-          <ol style="margin-left: 20px; margin-top: 10px;">
-            <li>Vous recevrez un <strong>Bon à Tirer (BAT)</strong> dans les prochains jours</li>
-            <li>Après validation du BAT, nous procéderons à l'impression</li>
-            <li>Votre encart apparaîtra dans le calendrier 2026</li>
-          </ol>
-          
-          <p style="margin-top: 20px;">Pour toute question, n'hésitez pas à contacter l'Amicale:</p>
-          <p><strong>Email:</strong> contact@pompiers34800.com</p>
-          <p><strong>Téléphone:</strong> 04.67.44.99.70</p>
-          
-          <div style="text-align: center; margin-top: 40px;">
-            <p>Merci pour votre soutien !</p>
-            <p style="margin-top: 5px; color: #666; font-size: 14px;">L'Amicale des Sapeurs-Pompiers de Clermont l'Hérault</p>
           </div>
         </div>
-      </form>
+        
+        <!-- Détails Chèque Caserne -->
+        <div id="cheque-caserne-details" class="payment-details" style="display: none;">
+          <div class="address-section">
+            <div class="section-title">DÉPÔT À LA CASERNE</div>
+            <div class="address-info">
+              <strong>Centre de Secours<br>
+              15 Rue Sauvignon<br>
+              34800 CLERMONT L'HÉRAULT</strong>
+            </div>
+            <div class="payment-note">
+              <strong>Chèque à l'ordre de :</strong> "Amicale des Sapeurs-Pompiers"<br>
+              <strong>Mentionnez au dos :</strong> Votre nom d'entreprise et le numéro de commande<br>
+              <strong>Glissez dans :</strong> La boîte aux lettres de l'Amicale
+            </div>
+          </div>
+        </div>
+        
+        <input type="hidden" id="selected_payment" name="selected_payment">
+        <input type="hidden" id="payment_details" name="payment_details">
+        <div class="error-message" id="payment-error">Veuillez sélectionner un mode de paiement</div>
+        
+        <div class="form-row">
+          <label for="commentaires">Commentaires ou demandes spéciales</label>
+          <textarea id="commentaires" name="commentaires" rows="3"></textarea>
+        </div>
+        
+        <div class="checkbox-option">
+          <input type="checkbox" id="terms_accepted" name="terms_accepted" required>
+          <label for="terms_accepted">En confirmant cette commande, j'accepte les conditions générales et j'autorise l'Amicale des Sapeurs-Pompiers de Clermont l'Hérault à utiliser mes coordonnées et à publier mon encart publicitaire dans le calendrier 2026.</label>
+        </div>
+        <div class="error-message" id="terms-error">Vous devez accepter les conditions pour continuer</div>
+        
+        <!-- Récapitulatif -->
+        <div class="summary-section">
+          <div class="section-title">RÉCAPITULATIF DE VOTRE COMMANDE</div>
+          <div class="summary-content">
+            <div class="summary-row">
+              <span class="label">Format :</span>
+              <span class="value" id="summary-format">-</span>
+            </div>
+            <div class="summary-row">
+              <span class="label">Mois :</span>
+              <span class="value" id="summary-months">-</span>
+            </div>
+            <div class="summary-row">
+              <span class="label">Parutions :</span>
+              <span class="value" id="summary-parutions">1</span>
+            </div>
+            <div class="summary-row total">
+              <span class="label">Total :</span>
+              <span class="value" id="summary-total">0 €</span>
+            </div>
+          </div>
+        </div>
+        
+        <div class="navigation-buttons">
+          <button type="button" class="submit-btn secondary" id="prev-step-4">RETOUR</button>
+          <button type="submit" class="submit-btn">CONFIRMER MA COMMANDE</button>
+        </div>
+      </div>
+    </form>
+    
+    <!-- CONFIRMATION -->
+    <div class="confirmation" id="confirmation">
+      <div class="confirmation-icon">✓</div>
+      <h2>Commande confirmée avec succès !</h2>
+      <p>Merci d'avoir commandé un encart publicitaire pour le calendrier 2026 des Sapeurs-Pompiers de Clermont l'Hérault.</p>
+      
+      <div class="summary-section">
+        <div class="section-title">VOTRE COMMANDE</div>
+        <div class="summary-content">
+          <div class="summary-row">
+            <span class="label">N° de commande :</span>
+            <span class="value" id="confirmation-order-number">CMD-2026-XXXXX</span>
+          </div>
+          <div class="summary-row">
+            <span class="label">Format :</span>
+            <span class="value" id="confirmation-format">-</span>
+          </div>
+          <div class="summary-row">
+            <span class="label">Mois :</span>
+            <span class="value" id="confirmation-months">-</span>
+          </div>
+          <div class="summary-row">
+            <span class="label">Paiement :</span>
+            <span class="value" id="confirmation-payment">-</span>
+          </div>
+          <div class="summary-row total">
+            <span class="label">Total :</span>
+            <span class="value" id="confirmation-total">0 €</span>
+          </div>
+        </div>
+      </div>
+      
+      <div class="next-actions">
+        <h3>Prochaines étapes :</h3>
+        <ol>
+          <li>Vous recevrez un <strong>Bon à Tirer (BAT)</strong> dans les prochains jours</li>
+          <li>Après validation du BAT, nous procéderons à l'impression</li>
+          <li>Votre encart apparaîtra dans le calendrier 2026</li>
+        </ol>
+      </div>
+      
+      <div style="text-align: center; margin-top: 30px;">
+        <p><strong>Contact :</strong> 04.67.44.99.70 - contact@pompiers34800.com</p>
+        <p style="margin-top: 20px;">Merci pour votre soutien !</p>
+      </div>
     </div>
   </div>
   

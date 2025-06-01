@@ -1,19 +1,17 @@
-// JavaScript pour le formulaire enterprise-form
+// JavaScript pour le formulaire enterprise-form avec navigation par étapes
 document.addEventListener('DOMContentLoaded', function() {
   // Récupération des paramètres de l'URL
   const urlParams = new URLSearchParams(window.location.search);
   
   // Pré-remplissage des champs avec les paramètres de l'URL
-  document.getElementById('entrepriseName').value = urlParams.get('nom') || '';
+  document.getElementById('entreprise_name').value = urlParams.get('nom') || '';
   document.getElementById('adresse').value = urlParams.get('adresse') || '';
-  document.getElementById('contactName').value = urlParams.get('contact') || '';
+  document.getElementById('contact_name').value = urlParams.get('contact') || '';
   document.getElementById('email').value = urlParams.get('email') || '';
   document.getElementById('telephone').value = urlParams.get('tel') || '';
   
-  // Gestion de la navigation entre les étapes
-  const progressBar = document.getElementById('progressBar');
-  
   // Variables pour stocker les sélections
+  let currentStep = 1;
   let selectedFormat = '';
   let formatPrice = 0;
   let selectedMonths = [];
@@ -22,47 +20,63 @@ document.addEventListener('DOMContentLoaded', function() {
   
   // Fonction pour mettre à jour la barre de progression
   function updateProgressBar(step) {
-    const progress = (step - 1) * 33.33;
-    progressBar.style.width = progress + '%';
+    document.querySelectorAll('.progress-step').forEach((stepEl, index) => {
+      const stepNumber = index + 1;
+      if (stepNumber < step) {
+        stepEl.classList.add('completed');
+        stepEl.classList.remove('active');
+      } else if (stepNumber === step) {
+        stepEl.classList.add('active');
+        stepEl.classList.remove('completed');
+      } else {
+        stepEl.classList.remove('active', 'completed');
+      }
+    });
   }
   
   // Fonction pour afficher une étape
   function showStep(step) {
-    document.querySelectorAll('.form-step').forEach(s => s.classList.remove('active'));
-    document.getElementById('step' + step).classList.add('active');
-    updateProgressBar(step);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    // Masquer toutes les sections
+    document.querySelectorAll('.form-section').forEach(section => {
+      section.classList.remove('active');
+    });
+    
+    // Afficher la section demandée
+    const targetSection = document.getElementById(`step-${step}`);
+    if (targetSection) {
+      targetSection.classList.add('active');
+      currentStep = step;
+      updateProgressBar(step);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   }
   
   // Validation Étape 1
-  document.getElementById('nextToStep2').addEventListener('click', function() {
-    const contactName = document.getElementById('contactName').value;
-    const email = document.getElementById('email').value;
-    const telephone = document.getElementById('telephone').value;
+  document.getElementById('next-step-1').addEventListener('click', function() {
+    const contactName = document.getElementById('contact_name').value.trim();
+    const email = document.getElementById('email').value.trim();
+    const telephone = document.getElementById('telephone').value.trim();
     let isValid = true;
     
+    // Masquer toutes les erreurs
+    document.querySelectorAll('.error-message').forEach(err => err.style.display = 'none');
+    
     if (!contactName) {
-      document.getElementById('contactNameError').style.display = 'block';
+      document.getElementById('contact-error').style.display = 'block';
       isValid = false;
-    } else {
-      document.getElementById('contactNameError').style.display = 'none';
     }
     
-    // Validation simple de l'email
+    // Validation email
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!email || !emailRegex.test(email)) {
-      document.getElementById('emailError').style.display = 'block';
+      document.getElementById('email-error').style.display = 'block';
       isValid = false;
-    } else {
-      document.getElementById('emailError').style.display = 'none';
     }
     
-    // Validation simple du téléphone
+    // Validation téléphone
     if (!telephone || telephone.length < 10) {
-      document.getElementById('telephoneError').style.display = 'block';
+      document.getElementById('telephone-error').style.display = 'block';
       isValid = false;
-    } else {
-      document.getElementById('telephoneError').style.display = 'none';
     }
     
     if (isValid) {
@@ -70,206 +84,168 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   });
   
-  // Navigation Étape 2 vers Étape 1
-  document.getElementById('prevToStep1').addEventListener('click', function() {
-    showStep(1);
-  });
-  
-  // Sélection du format
-  document.querySelectorAll('.format-option').forEach(option => {
-    option.addEventListener('click', function() {
+  // Gestion sélection format
+  document.querySelectorAll('.format-card').forEach(card => {
+    card.addEventListener('click', function() {
       // Désélectionner tous les formats
-      document.querySelectorAll('.format-option').forEach(o => o.classList.remove('selected'));
+      document.querySelectorAll('.format-card').forEach(c => c.classList.remove('selected'));
       
       // Sélectionner le format cliqué
       this.classList.add('selected');
       
-      // Stocker les informations du format
+      // Stocker les informations
       selectedFormat = this.getAttribute('data-format');
       formatPrice = parseInt(this.getAttribute('data-price'));
       isAnnualOffer = this.getAttribute('data-annual') === 'true';
       
       // Mettre à jour les champs cachés
-      document.getElementById('selectedFormat').value = selectedFormat;
-      document.getElementById('formatPrice').value = formatPrice;
+      document.getElementById('selected_format').value = selectedFormat;
+      document.getElementById('format_price').value = formatPrice;
       
       // Mettre à jour le récapitulatif
-      document.getElementById('summaryFormat').textContent = selectedFormat;
+      updateSummary();
       
-      // Masquer le message d'erreur
-      document.getElementById('formatError').style.display = 'none';
-      
-      // Mettre à jour le prix total
-      updateTotalPrice();
+      // Masquer l'erreur
+      document.getElementById('format-error').style.display = 'none';
     });
   });
   
-  // Validation Étape 2
-  document.getElementById('nextToStep3').addEventListener('click', function() {
+  // Navigation Étape 2
+  document.getElementById('prev-step-2').addEventListener('click', () => showStep(1));
+  document.getElementById('next-step-2').addEventListener('click', function() {
     if (!selectedFormat) {
-      document.getElementById('formatError').style.display = 'block';
+      document.getElementById('format-error').style.display = 'block';
       return;
     }
     
-    // Configurer l'affichage de l'étape 3 selon le type d'offre
+    // Configurer l'étape 3 selon le type d'offre
     if (isAnnualOffer) {
-      document.getElementById('monthSelectionText').style.display = 'none';
-      document.getElementById('annualText').style.display = 'block';
-      document.getElementById('monthSelector').style.display = 'none';
-      document.getElementById('nombreParutions').value = 12;
-      document.getElementById('nombreParutions').disabled = true;
-      document.querySelector('.multiple-months').style.display = 'none';
+      document.getElementById('month-selection-text').style.display = 'none';
+      document.getElementById('annual-text').style.display = 'block';
+      document.getElementById('month-selector').style.display = 'none';
+      document.getElementById('parutions-row').style.display = 'none';
       
-      // Sélectionner tous les mois pour l'offre annuelle
+      // Sélectionner tous les mois
       selectedMonths = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
-      document.getElementById('selectedMonths').value = selectedMonths.join(',');
-      document.getElementById('summaryMonths').textContent = 'Tous les mois';
-      document.getElementById('summaryParutions').textContent = '12';
+      document.getElementById('selected_months').value = selectedMonths.join(',');
+      document.getElementById('nombre_parutions').value = 12;
     } else {
-      document.getElementById('monthSelectionText').style.display = 'block';
-      document.getElementById('annualText').style.display = 'none';
-      document.getElementById('monthSelector').style.display = 'block';
-      document.getElementById('nombreParutions').value = 1;
-      document.getElementById('nombreParutions').disabled = false;
-      document.querySelector('.multiple-months').style.display = 'block';
+      document.getElementById('month-selection-text').style.display = 'block';
+      document.getElementById('annual-text').style.display = 'none';
+      document.getElementById('month-selector').style.display = 'block';
+      document.getElementById('parutions-row').style.display = 'block';
       
-      // Réinitialiser la sélection des mois
+      // Réinitialiser
       selectedMonths = [];
-      document.getElementById('selectedMonths').value = '';
-      document.getElementById('summaryMonths').textContent = '-';
-      document.getElementById('summaryParutions').textContent = '1';
+      document.getElementById('selected_months').value = '';
+      document.getElementById('nombre_parutions').value = 1;
       
       // Désélectionner tous les mois
-      document.querySelectorAll('.month-btn').forEach(btn => {
-        btn.classList.remove('selected');
-        btn.classList.remove('unavailable');
+      document.querySelectorAll('.month-card').forEach(card => {
+        card.classList.remove('selected', 'unavailable');
       });
       
       // Marquer certains mois comme indisponibles
       const unavailableMonths = ['Février', 'Juillet'];
       unavailableMonths.forEach(month => {
-        const monthBtn = document.querySelector(`.month-btn[data-month="${month}"]`);
-        if (monthBtn) {
-          monthBtn.classList.add('unavailable');
+        const monthCard = document.querySelector(`.month-card[data-month="${month}"]`);
+        if (monthCard) {
+          monthCard.classList.add('unavailable');
         }
       });
     }
     
+    updateSummary();
     showStep(3);
   });
   
-  // Navigation Étape 3 vers Étape 2
-  document.getElementById('prevToStep2').addEventListener('click', function() {
-    showStep(2);
-  });
-  
-  // Sélection des mois
-  document.querySelectorAll('.month-btn').forEach(btn => {
-    btn.addEventListener('click', function() {
-      // Ne rien faire si le mois est indisponible
-      if (this.classList.contains('unavailable')) {
-        return;
-      }
+  // Gestion sélection mois
+  document.querySelectorAll('.month-card').forEach(card => {
+    card.addEventListener('click', function() {
+      if (this.classList.contains('unavailable')) return;
       
       const month = this.getAttribute('data-month');
-      const nombreParutions = parseInt(document.getElementById('nombreParutions').value);
+      const maxParutions = parseInt(document.getElementById('nombre_parutions').value) || 1;
       
       if (this.classList.contains('selected')) {
-        // Désélectionner le mois
+        // Désélectionner
         this.classList.remove('selected');
         selectedMonths = selectedMonths.filter(m => m !== month);
       } else {
-        // Vérifier si on a atteint le nombre max de mois
-        if (selectedMonths.length < nombreParutions) {
-          // Sélectionner le mois
+        // Sélectionner si possible
+        if (selectedMonths.length < maxParutions) {
           this.classList.add('selected');
           selectedMonths.push(month);
         } else {
-          alert(`Vous ne pouvez sélectionner que ${nombreParutions} mois. Pour en sélectionner plus, augmentez le nombre de parutions.`);
+          alert(`Vous ne pouvez sélectionner que ${maxParutions} mois. Augmentez le nombre de parutions si nécessaire.`);
+          return;
         }
       }
       
-      // Mettre à jour le champ caché et le récapitulatif
-      document.getElementById('selectedMonths').value = selectedMonths.join(',');
-      document.getElementById('summaryMonths').textContent = selectedMonths.length > 0 ? selectedMonths.join(', ') : '-';
-      
-      // Masquer le message d'erreur
-      document.getElementById('monthError').style.display = 'none';
-      
-      // Mettre à jour le prix total
-      updateTotalPrice();
+      document.getElementById('selected_months').value = selectedMonths.join(',');
+      document.getElementById('month-error').style.display = 'none';
+      updateSummary();
     });
   });
   
-  // Gestion du nombre de parutions
-  document.getElementById('nombreParutions').addEventListener('change', function() {
-    const nombreParutions = parseInt(this.value);
+  // Gestion nombre de parutions
+  document.getElementById('nombre_parutions').addEventListener('change', function() {
+    const nombreParutions = parseInt(this.value) || 1;
     
     // Limiter entre 1 et 12
     if (nombreParutions < 1) this.value = 1;
     if (nombreParutions > 12) this.value = 12;
     
-    const actualNombreParutions = parseInt(this.value);
-    document.getElementById('summaryParutions').textContent = actualNombreParutions;
-    
-    // Si le nombre de parutions a diminué et qu'il y a plus de mois sélectionnés
-    if (selectedMonths.length > actualNombreParutions) {
-      // Garder uniquement les premiers mois
-      const excessMonths = selectedMonths.length - actualNombreParutions;
+    // Si trop de mois sélectionnés, désélectionner les derniers
+    const actualNombre = parseInt(this.value);
+    if (selectedMonths.length > actualNombre) {
+      const excessMonths = selectedMonths.length - actualNombre;
       for (let i = 0; i < excessMonths; i++) {
         const monthToRemove = selectedMonths.pop();
-        const monthBtn = document.querySelector(`.month-btn[data-month="${monthToRemove}"]`);
-        if (monthBtn) {
-          monthBtn.classList.remove('selected');
+        const monthCard = document.querySelector(`.month-card[data-month="${monthToRemove}"]`);
+        if (monthCard) {
+          monthCard.classList.remove('selected');
         }
       }
-      
-      // Mettre à jour le champ caché et le récapitulatif
-      document.getElementById('selectedMonths').value = selectedMonths.join(',');
-      document.getElementById('summaryMonths').textContent = selectedMonths.length > 0 ? selectedMonths.join(', ') : '-';
+      document.getElementById('selected_months').value = selectedMonths.join(',');
     }
     
-    // Mettre à jour le prix total
-    updateTotalPrice();
+    updateSummary();
   });
   
-  // Validation Étape 3
-  document.getElementById('nextToStep4').addEventListener('click', function() {
+  // Navigation Étape 3
+  document.getElementById('prev-step-3').addEventListener('click', () => showStep(2));
+  document.getElementById('next-step-3').addEventListener('click', function() {
     if (!isAnnualOffer && selectedMonths.length === 0) {
-      document.getElementById('monthError').style.display = 'block';
+      document.getElementById('month-error').style.display = 'block';
       return;
     }
     
     showStep(4);
   });
   
-  // Navigation Étape 4 vers Étape 3
-  document.getElementById('prevToStep3').addEventListener('click', function() {
-    showStep(3);
-  });
-  
-  // Sélection du mode de paiement
-  document.querySelectorAll('.payment-option').forEach(option => {
-    option.addEventListener('click', function() {
-      // Désélectionner tous les modes de paiement
-      document.querySelectorAll('.payment-option').forEach(o => o.classList.remove('selected'));
+  // Gestion sélection paiement
+  document.querySelectorAll('.payment-card').forEach(card => {
+    card.addEventListener('click', function() {
+      // Désélectionner tous les modes
+      document.querySelectorAll('.payment-card').forEach(c => c.classList.remove('selected'));
       
-      // Sélectionner le mode de paiement cliqué
+      // Sélectionner le mode cliqué
       this.classList.add('selected');
       
-      // Stocker le mode de paiement
+      // Stocker les informations
       selectedPayment = this.getAttribute('data-payment');
       const paymentDetails = this.getAttribute('data-details');
       
-      document.getElementById('selectedPayment').value = selectedPayment;
-      document.getElementById('paymentDetails').value = paymentDetails || '';
+      document.getElementById('selected_payment').value = selectedPayment;
+      document.getElementById('payment_details').value = paymentDetails || '';
       
       // Masquer toutes les sections de détails
       document.querySelectorAll('.payment-details').forEach(detail => {
         detail.style.display = 'none';
       });
       
-      // Afficher la section de détails correspondante
+      // Afficher la section correspondante
       if (paymentDetails) {
         const detailSection = document.getElementById(paymentDetails + '-details');
         if (detailSection) {
@@ -277,102 +253,125 @@ document.addEventListener('DOMContentLoaded', function() {
         }
       }
       
-      // Masquer le message d'erreur
-      document.getElementById('paymentError').style.display = 'none';
+      document.getElementById('payment-error').style.display = 'none';
     });
   });
   
-  // Fonction pour mettre à jour le prix total
-  function updateTotalPrice() {
-    if (!formatPrice) return;
+  // Navigation Étape 4
+  document.getElementById('prev-step-4').addEventListener('click', () => showStep(3));
+  
+  // Fonction pour mettre à jour le récapitulatif
+  function updateSummary() {
+    if (!selectedFormat) return;
     
+    // Format
+    document.getElementById('summary-format').textContent = selectedFormat;
+    
+    // Mois
+    const monthsText = isAnnualOffer ? 'Tous les mois' : 
+                     selectedMonths.length > 0 ? selectedMonths.join(', ') : '-';
+    document.getElementById('summary-months').textContent = monthsText;
+    
+    // Parutions
+    const nombreParutions = isAnnualOffer ? 12 : parseInt(document.getElementById('nombre_parutions').value) || 1;
+    document.getElementById('summary-parutions').textContent = nombreParutions;
+    
+    // Prix total
     let total = 0;
-    
     if (isAnnualOffer) {
-      // Prix forfaitaire pour l'offre annuelle
-      total = formatPrice;
+      total = formatPrice; // Prix forfaitaire
     } else {
-      // Prix unitaire * nombre de parutions
-      const nombreParutions = parseInt(document.getElementById('nombreParutions').value) || 1;
       total = formatPrice * nombreParutions;
     }
     
-    document.getElementById('summaryTotal').textContent = total + ' €';
-    document.getElementById('confirmationTotal').textContent = total + ' €';
+    document.getElementById('summary-total').textContent = total + ' €';
   }
   
   // Soumission du formulaire
-  document.getElementById('adForm').addEventListener('submit', function(e) {
+  document.getElementById('enterprise-form').addEventListener('submit', function(e) {
     e.preventDefault();
     
     // Validation finale
     let isValid = true;
     
     if (!selectedPayment) {
-      document.getElementById('paymentError').style.display = 'block';
+      document.getElementById('payment-error').style.display = 'block';
       isValid = false;
     }
     
-    const termsAccepted = document.getElementById('termsAccepted').checked;
+    const termsAccepted = document.getElementById('terms_accepted').checked;
     if (!termsAccepted) {
-      document.getElementById('termsError').style.display = 'block';
+      document.getElementById('terms-error').style.display = 'block';
       isValid = false;
     }
     
     if (!isValid) return;
     
-    // Collecter toutes les données du formulaire
+    // Collecter les données
     const formData = new FormData(this);
     
-    // Ajouter l'ID entreprise depuis l'URL
+    // Ajouter des données supplémentaires
     const entrepriseId = urlParams.get('id');
     if (entrepriseId) {
       formData.append('entrepriseId', entrepriseId);
     }
     
-    // Ajouter une référence unique pour la commande
+    // Générer numéro de commande
     const orderNumber = 'CMD-2026-' + Math.floor(100000 + Math.random() * 900000);
     formData.append('orderNumber', orderNumber);
-    document.getElementById('confirmationOrderNumber').textContent = orderNumber;
     
-    // Mettre à jour les informations de confirmation
+    // Calculer prix total
+    const nombreParutions = isAnnualOffer ? 12 : parseInt(document.getElementById('nombre_parutions').value) || 1;
+    const total = isAnnualOffer ? formatPrice : formatPrice * nombreParutions;
+    formData.append('prixTotal', total);
+    
+    // Mettre à jour la confirmation
+    document.getElementById('confirmation-order-number').textContent = orderNumber;
+    document.getElementById('confirmation-format').textContent = selectedFormat;
+    document.getElementById('confirmation-months').textContent = isAnnualOffer ? 'Tous les mois' : selectedMonths.join(', ');
+    
+    // Labels de paiement
     const paymentLabels = {
       'Virement': 'Virement bancaire',
       'Cheque_Remise': 'Chèque - Remise en main propre',
-      'Cheque_Poste': 'Chèque - Envoi postal', 
+      'Cheque_Poste': 'Chèque - Envoi postal',
       'Cheque_Caserne': 'Chèque - Dépôt caserne'
     };
+    document.getElementById('confirmation-payment').textContent = paymentLabels[selectedPayment] || selectedPayment;
+    document.getElementById('confirmation-total').textContent = total + ' €';
     
-    document.getElementById('confirmationFormat').textContent = selectedFormat;
-    document.getElementById('confirmationMonths').textContent = isAnnualOffer ? 'Tous les mois' : selectedMonths.join(', ');
-    document.getElementById('confirmationPayment').textContent = paymentLabels[selectedPayment] || selectedPayment;
+    // Masquer le formulaire et afficher la confirmation
+    document.querySelectorAll('.form-section').forEach(section => {
+      section.classList.remove('active');
+    });
+    document.getElementById('confirmation').style.display = 'block';
     
-    // Afficher l'étape de confirmation
-    document.querySelectorAll('.form-step').forEach(s => s.classList.remove('active'));
-    document.getElementById('confirmation').classList.add('active');
-    document.querySelector('.confirmation-banner').style.display = 'block';
-    progressBar.style.width = '100%';
+    // Mettre la barre de progression à 100%
+    document.querySelectorAll('.progress-step').forEach(step => {
+      step.classList.add('completed');
+      step.classList.remove('active');
+    });
     
-    // Envoi des données au serveur via fetch
+    // Envoyer au webhook
     fetch('https://n8n.dsolution-ia.fr/webhook/entreprise-commande', {
       method: 'POST',
       body: formData
     })
     .then(response => {
-      if (!response.ok) {
-        throw new Error('Erreur lors de l\'envoi du formulaire');
+      if (response.ok) {
+        return response.json();
       }
-      return response.json();
+      throw new Error('Erreur serveur');
     })
     .then(data => {
-      console.log('Réponse du serveur:', data);
+      console.log('Commande envoyée avec succès:', data);
     })
     .catch(error => {
-      console.error('Erreur:', error);
-      // En cas d'erreur, le formulaire sera quand même soumis via Netlify
+      console.error('Erreur lors de l\'envoi:', error);
+      // Le formulaire sera quand même soumis via Netlify en fallback
     });
   });
   
-  // Initialiser l'interface
-  updateProgressBar(1);
+  // Initialisation
+  showStep(1);
 });
