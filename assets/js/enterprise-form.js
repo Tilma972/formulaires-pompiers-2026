@@ -358,7 +358,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     // Envoyer au webhook
-    fetch('https://n8n.dsolution-ia.fr/webhook/entreprise-commande', {
+    fetch('https://n8n.dsolution-ia.fr/webhook/gateway-calendrier', {
       method: 'POST',
       body: formData
     })
