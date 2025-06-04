@@ -849,7 +849,7 @@ function tryNetlifyFormSubmission(formDataObject) { // Renommé pour clarté
   
   const netlifyForm = document.createElement('form');
   netlifyForm.method = 'POST';
-  netlifyForm.action = '/'; // Action par défaut pour Netlify sur le même site
+  netlifyForm.action = '/prospecteur/'; // Action par défaut pour Netlify sur le même site
   netlifyForm.setAttribute('data-netlify', 'true');
   netlifyForm.setAttribute('name', 'prospecteur-form-fallback'); // Nom différent pour éviter conflits potentiels
   netlifyForm.style.display = 'none'; // Masquer ce formulaire de fallback
