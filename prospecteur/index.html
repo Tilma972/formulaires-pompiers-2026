@@ -28,7 +28,7 @@
         <li>Communiquez-nous le résultat via un second formulaire</li>
       </ol>
     </div>
-<form id="prospecteur-form" name="prospecteur-form" method="POST" data-netlify="true" netlify-honeypot="bot-field">
+<form id="prospecteur-form" name="prospecteur-form" method="POST" data-netlify="true" netlify-honeypot="bot-field" action="/prospecteur/success.html">
       <!-- Champs cachés pour Netlify -->
       <input type="hidden" name="form-name" value="prospecteur-form">
       <p class="hidden">
@@ -113,6 +113,7 @@
           </select>
         </div>
       </div>
+      <div data-netlify-recaptcha="true"></div>
       <button type="submit" class="submit-btn" id="submit-button">CONFIRMER MA PARTICIPATION</button>
       <div class="data-policy">
         En soumettant ce formulaire, vous acceptez que les informations saisies soient utilisées par l'Amicale des Sapeurs-Pompiers de Clermont l'Hérault dans le cadre de votre participation à la campagne de prospection pour le calendrier 2026.
