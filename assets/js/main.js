@@ -844,20 +844,20 @@ function showErrorMessage(message) {
 }
 
 // Fallback vers Netlify Forms
-function tryNetlifyFormSubmission(formDataObject) { // Renommé pour clarté
+function tryNetlifyFormSubmission(formDataObject) {
   console.log("Tentative de soumission via Netlify Forms (fallback)...");
   
   const netlifyForm = document.createElement('form');
   netlifyForm.method = 'POST';
-  netlifyForm.action = '/'; // Action par défaut pour Netlify sur le même site
+  // PAS d'action - laisse Netlify gérer automatiquement
   netlifyForm.setAttribute('data-netlify', 'true');
-  netlifyForm.setAttribute('name', 'prospecteur-form-fallback'); // Nom différent pour éviter conflits potentiels
-  netlifyForm.style.display = 'none'; // Masquer ce formulaire de fallback
+  netlifyForm.setAttribute('name', 'prospecteur-form-fallback');
+  netlifyForm.style.display = 'none';
 
   // Ajouter chaque champ au formulaire Netlify
   for (const key in formDataObject) {
     if (formDataObject.hasOwnProperty(key)) {
-      // Éviter les champs spécifiques à la logique interne ou déjà gérés par Netlify
+      // Éviter les champs spécifiques à la logique interne
       if (key !== 'form-name' && key !== 'bot-field' && key !== 'source' && key !== 'timestamp' && key !== 'user_agent' && key !== 'page_url') {
         const input = document.createElement('input');
         input.type = 'hidden';
@@ -872,12 +872,13 @@ function tryNetlifyFormSubmission(formDataObject) { // Renommé pour clarté
   const formNameInput = document.createElement('input');
   formNameInput.type = 'hidden';
   formNameInput.name = 'form-name';
-  formNameInput.value = 'prospecteur-form-fallback'; // Doit correspondre au nom du formulaire Netlify
+  formNameInput.value = 'prospecteur-form-fallback';
   netlifyForm.appendChild(formNameInput);
   
   document.body.appendChild(netlifyForm);
   netlifyForm.submit();
-  // Après la soumission, on peut informer l'utilisateur, bien que la page va probablement recharger.
+  
+  // Afficher un message à l'utilisateur
   showErrorMessage("Le formulaire a été envoyé via un mode alternatif. Nous vous contacterons bientôt.");
 }
 

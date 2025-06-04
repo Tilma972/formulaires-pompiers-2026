@@ -1,0 +1,6 @@
+# Redirections pour les formulaires
+/prospecteur /prospecteur/index.html 200
+/prospecteur/ /prospecteur/index.html 200
+
+# Gestion des erreurs 404
+/* /index.html 200
