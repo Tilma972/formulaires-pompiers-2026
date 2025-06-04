@@ -1,28 +1,23 @@
 [build]
   publish = "."
 
-# Redirections pour les formulaires
+# Gestion des formulaires Netlify
+[[redirects]]
+  from = "/prospecteur/"
+  to = "/prospecteur/index.html"
+  status = 200
+
 [[redirects]]
   from = "/prospecteur"
   to = "/prospecteur/index.html"
   status = 200
-  
-[[redirects]]
-  from = "/qualification"
-  to = "/qualification/index.html"
-  status = 200
-  
-[[redirects]]
-  from = "/enterprise-form"
-  to = "/enterprise-form/index.html"
-  status = 200
-  
-# Redirection par défaut pour tout le reste
+
+# Redirection par défaut pour le SPA
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
-  
+
 # Variables d'environnement pour les webhooks
 [build.environment]
   WEBHOOK_PREQUALIFICATION = "https://n8n.dsolution-ia.fr/webhook/gateway-calendrier"
