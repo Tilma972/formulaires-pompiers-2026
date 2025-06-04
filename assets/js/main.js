@@ -681,7 +681,7 @@ function validateFormBeforeSubmit() {
 function setupFormSubmission() {
   const form = document.getElementById('prospecteur-form');
   
-  form.addEventListener('submit', async function(event) {
+  /*form.addEventListener('submit', async function(event) {
     event.preventDefault();
     
     // ✨ AJOUT : Validation avant de continuer
@@ -810,7 +810,7 @@ function setupFormSubmission() {
         tryNetlifyFormSubmission(formObject); // S'assurer que formObject est défini et contient les bonnes données
       }
     }
-  });
+  });*/
 }
 
 // 🔧 AMÉLIORATION : Fonction pour afficher les erreurs
