@@ -27,5 +27,5 @@
 [build.environment]
   WEBHOOK_PREQUALIFICATION = "https://n8n.dsolution-ia.fr/webhook/gateway-calendrier"
   WEBHOOK_PROSPECTEUR = "https://n8n.dsolution-ia.fr/webhook/gateway-calendrier"
-  WEBHOOK_QUALIFICATION = "https://n8n.dsolution-ia.fr/webhook/qualification-submission"
+  WEBHOOK_QUALIFICATION = "https://n8n.dsolution-ia.fr/webhook/gateway-calendrier"
   API_ENTERPRISES = "https://n8n.dsolution-ia.fr/webhook/get-enterprises"
