@@ -1,6 +1,6 @@
-# Redirections pour les formulaires
+# Gestion des formulaires Netlify
 /prospecteur /prospecteur/index.html 200
 /prospecteur/ /prospecteur/index.html 200
 
-# Gestion des erreurs 404
+# SPA fallback - DOIT être en dernier
 /* /index.html 200
