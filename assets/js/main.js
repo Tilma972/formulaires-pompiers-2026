@@ -675,7 +675,7 @@ function validateFormBeforeSubmit() {
   return true;
 }
 
-// Gestion de la soumission du formulaire - VERSION SANS NETLIFY
+// Gestion de la soumission du formulaire - VERSION CORRIGÉE
 function setupFormSubmission() {
   const form = document.getElementById('prospecteur-form');
   
@@ -696,10 +696,12 @@ function setupFormSubmission() {
     submitButton.disabled = true;
     submitButton.innerHTML = '<span class="loader"></span> Traitement en cours...';
     
+    // DÉCLARATION de formObject ici pour être accessible partout
+    let formObject = {};
+    
     try {
       // Collecter les données du formulaire
       const formData = new FormData(this);
-      const formObject = {};
       
       formData.forEach((value, key) => {
         formObject[key] = value;
@@ -716,7 +718,7 @@ function setupFormSubmission() {
       
       console.log('📤 Données à envoyer:', formObject);
       
-      // Envoyer directement au webhook n8n
+      // Envoyer au webhook n8n
       const response = await fetch('https://n8n.dsolution-ia.fr/webhook/gateway-calendrier', {
         method: 'POST',
         headers: {
@@ -758,7 +760,7 @@ function setupFormSubmission() {
   });
 }
 
-// Enrichir les données avec informations entreprise
+// Enrichir les données avec informations entreprise - VERSION CORRIGÉE
 async function enrichEnterpriseData(formObject) {
   const isNewEnterprise = document.getElementById('nouvelle_entreprise').checked;
   
@@ -778,8 +780,8 @@ async function enrichEnterpriseData(formObject) {
         formObject.commune_entreprise_selectionnee = commune;
         formObject.adresse_entreprise_selectionnee = selectedEnterprise.adresse || '';
         formObject.telephone_entreprise_selectionnee = selectedEnterprise.telephone || selectedEnterprise.portable || '';
-        formObject.email_entreprise_selectionnee = selectedEntreprise.email || '';
-        formObject.activite_entreprise_selectionnee = selectedEnterprise.activitée || selectedEntreprise.activite || '';
+        formObject.email_entreprise_selectionnee = selectedEnterprise.email || '';
+        formObject.activite_entreprise_selectionnee = selectedEnterprise.activitée || selectedEnterprise.activite || '';
         
         console.log('🏢 Entreprise enrichie:', selectedEnterprise.nom_entreprise);
       }
