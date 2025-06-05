@@ -28,12 +28,9 @@
         <li>Communiquez-nous le résultat via un second formulaire</li>
       </ol>
     </div>
-<form name="prospecteur-form" method="POST" data-netlify="true" netlify-honeypot="bot-field" action="/prospecteur/success.html">
-      <!-- Champs cachés pour Netlify -->
-      <input type="hidden" name="form-name" value="prospecteur-form">
-      <p class="hidden">
-        <label>Ne pas remplir si vous êtes humain : <input name="bot-field"></label>
-      </p>
+
+    <!-- FORMULAIRE MODIFIÉ - SUPPRIMÉ TOUS LES ATTRIBUTS NETLIFY -->
+    <form id="prospecteur-form" name="prospecteur-form">
       <div class="form-section">
         <div class="section-title">VOS COORDONNÉES</div>
         <div class="form-row">
@@ -113,19 +110,33 @@
           </select>
         </div>
       </div>
-      <div data-netlify-recaptcha="true"></div>
+      
       <button type="submit" class="submit-btn" id="submit-button">CONFIRMER MA PARTICIPATION</button>
+      
       <div class="data-policy">
         En soumettant ce formulaire, vous acceptez que les informations saisies soient utilisées par l'Amicale des Sapeurs-Pompiers de Clermont l'Hérault dans le cadre de votre participation à la campagne de prospection pour le calendrier 2026.
       </div>
     </form>
+    
     <div class="confirmation" id="confirmation">
       <div class="confirmation-icon">✓</div>
       <h2>Participation confirmée !</h2>
       <p>Merci de votre soutien aux Sapeurs-Pompiers de Clermont l'Hérault.</p>
       <p>Vous recevrez prochainement un email avec toutes les informations nécessaires pour contacter l'entreprise.</p>
     </div>
+
+    <!-- SECTION D'ERREUR AJOUTÉE -->
+    <div class="error-container" id="error-container" style="display: none;">
+      <h2>⚠️ Problème de connexion</h2>
+      <p id="error-message">Une erreur est survenue lors de l'envoi du formulaire.</p>
+      <button onclick="retrySubmission()" class="submit-btn">🔄 RÉESSAYER</button>
+      <button onclick="downloadFormData()" class="submit-btn secondary">💾 SAUVEGARDER MES DONNÉES</button>
+      <p style="font-size: 12px; color: #666; margin-top: 10px;">
+        En cas de problème persistant, sauvegardez vos données et contactez-nous.
+      </p>
+    </div>
   </div>
+  
   <script src="/assets/js/main.js" defer></script>
 </body>
 </html>
