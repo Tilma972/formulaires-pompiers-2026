@@ -90,8 +90,7 @@ function setupFormSubmission() {
       entrepriseId: window.entrepriseId || null,
       
       // Tracking
-      user_agent: navigator.userAgent,
-      completion_time_seconds: Math.round((Date.now() - startTime) / 1000)
+      user_agent: navigator.userAgent,      
     };
     
     console.log('📤 Envoi payload JSON vers Gateway:', payload);
