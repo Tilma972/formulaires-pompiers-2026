@@ -1,10 +1,15 @@
-// prefillform-enterprise.js - Version corrigée pour la validation
+// prefillform-enterprise.js - Version Non-Intrusive
+// Cette version ne modifie PAS les gestionnaires d'événements existants
 
 (function() {
-  // Attendre que le DOM soit chargé
+  // Attendre que le DOM soit chargé ET que le script principal soit initialisé
   document.addEventListener('DOMContentLoaded', function() {
     console.log("🏢 Initialisation du pré-remplissage formulaire entreprise");
-    prefillEnterpriseForm();
+    
+    // Attendre un peu que enterprise-form.js soit complètement chargé
+    setTimeout(() => {
+      prefillEnterpriseForm();
+    }, 100);
   });
 
   // Fonction principale de pré-remplissage
@@ -13,6 +18,12 @@
       // Récupérer les paramètres de l'URL
       const params = getUrlParams();
       console.log("📋 Paramètres URL détectés:", params);
+
+      // Si aucun paramètre, ne rien faire
+      if (Object.keys(params).length === 0) {
+        console.log("ℹ️ Aucun paramètre URL détecté, pré-remplissage ignoré");
+        return;
+      }
 
       // 🔒 Remplir les champs en lecture seule (informations entreprise)
       fillFieldReadonly('entreprise_name', params.nom, true);
@@ -25,162 +36,118 @@
       
       // 🆔 Stocker l'ID entreprise pour le traitement
       if (params.id) {
-        // Créer un champ caché pour l'ID entreprise
-        const hiddenIdField = document.createElement('input');
-        hiddenIdField.type = 'hidden';
-        hiddenIdField.id = 'entreprise_id';
-        hiddenIdField.name = 'entreprise_id';
-        hiddenIdField.value = params.id;
-        
-        const form = document.getElementById('enterprise-form');
-        if (form) {
-          form.appendChild(hiddenIdField);
-          console.log("🆔 ID entreprise stocké:", params.id);
-        }
+        addHiddenField('entreprise_id', params.id);
+        console.log("🆔 ID entreprise stocké:", params.id);
       }
       
-      // 🎯 Pré-sélection format/mois si spécifiés
+      // 🎯 Pré-sélection format/mois si spécifiés (après navigation vers étapes suivantes)
       if (params.format || params.mois) {
-        setTimeout(() => {
-          console.log("🎨 Pré-sélection format/mois détectée");
-          
-          if (params.format) {
-            preselectFormat(params.format);
-          }
-          
-          if (params.mois) {
-            preselectMonth(safeDecodeURIComponent(params.mois));
-          }
-        }, 1000); // Attendre que les événements soient attachés
+        setupFormatMonthPreselection(params);
       }
 
       // ✅ Marquer le formulaire comme pré-rempli
       const form = document.getElementById('enterprise-form');
       if (form) {
         form.setAttribute('data-prefilled', 'true');
-        
-        // Ajouter un indicateur visuel
         addPrefillIndicator(params);
       }
 
-      // 🔧 CORRECTION : Modifier la validation pour ignorer les champs readonly
-      setTimeout(() => {
-        patchValidationForReadonlyFields();
-      }, 500);
+      // 🔧 AMÉLIORATION : Validation custom SANS remplacer les gestionnaires existants
+      enhanceValidationForReadonlyFields();
 
     } catch (error) {
       console.error("❌ Erreur lors du pré-remplissage:", error);
     }
   }
 
-  // 🔧 NOUVELLE FONCTION : Patcher la validation pour les champs readonly
-  function patchValidationForReadonlyFields() {
-    const nextButton = document.getElementById('next-step-1');
-    if (!nextButton) return;
+  // 🔧 NOUVELLE APPROCHE : Améliorer la validation sans remplacer les gestionnaires
+  function enhanceValidationForReadonlyFields() {
+    // Surveiller les tentatives de validation du formulaire
+    const form = document.getElementById('enterprise-form');
+    if (!form) return;
 
-    // Sauvegarder l'ancien gestionnaire d'événements
-    const oldHandler = nextButton.onclick;
-    
-    // Remplacer par une validation modifiée
-    nextButton.onclick = function(e) {
-      e.preventDefault();
-      
-      const contactName = document.getElementById('contact_name').value.trim();
-      const email = document.getElementById('email').value.trim();
-      const telephone = document.getElementById('telephone').value.trim();
-      
-      // Récupérer les champs entreprise (readonly ou non)
+    // Intercepter la soumission pour s'assurer que les champs readonly sont valides
+    form.addEventListener('submit', function(e) {
       const entrepriseName = document.getElementById('entreprise_name').value.trim();
       const adresse = document.getElementById('adresse').value.trim();
       
-      let isValid = true;
-      
-      // Masquer toutes les erreurs
-      document.querySelectorAll('.error-message').forEach(err => err.style.display = 'none');
-      
-      // Validation champs contact (toujours requis)
-      if (!contactName) {
-        document.getElementById('contact-error').style.display = 'block';
-        isValid = false;
+      if (!entrepriseName || !adresse) {
+        e.preventDefault();
+        showCustomError('Informations entreprise manquantes. Veuillez utiliser le lien personnalisé fourni.');
+        return false;
       }
-      
-      // Validation email
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!email || !emailRegex.test(email)) {
-        document.getElementById('email-error').style.display = 'block';
-        isValid = false;
-      }
-      
-      // Validation téléphone
-      if (!telephone || telephone.length < 10) {
-        document.getElementById('telephone-error').style.display = 'block';
-        isValid = false;
-      }
-      
-      // Validation champs entreprise (requis même si readonly)
-      if (!entrepriseName) {
-        showCustomError('Le nom de l\'entreprise est requis');
-        isValid = false;
-      }
-      
-      if (!adresse) {
-        showCustomError('L\'adresse de l\'entreprise est requise');
-        isValid = false;
-      }
-      
-      if (isValid) {
-        // Appeler la fonction showStep du script principal
-        if (typeof showStep === 'function') {
-          showStep(2);
-        } else {
-          // Fallback : déclencher manuellement le passage à l'étape 2
-          document.querySelectorAll('.form-section').forEach(section => {
-            section.classList.remove('active');
-          });
-          const step2 = document.getElementById('step-2');
-          if (step2) {
-            step2.classList.add('active');
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-          }
-        }
-      }
-    };
-    
-    console.log("✅ Validation patchée pour les champs readonly");
-  }
+    }, true); // true = capture phase
 
-  // Fonction pour afficher une erreur personnalisée
-  function showCustomError(message) {
-    // Créer ou récupérer un élément d'erreur global
-    let errorElement = document.getElementById('custom-error-message');
-    if (!errorElement) {
-      errorElement = document.createElement('div');
-      errorElement.id = 'custom-error-message';
-      errorElement.style.cssText = `
-        color: #e63946;
-        background-color: rgba(230, 57, 70, 0.1);
-        padding: 12px 15px;
-        border-radius: 5px;
-        margin-bottom: 15px;
-        border-left: 4px solid #e63946;
-        font-weight: bold;
-        display: block;
-      `;
-      
-      const step1 = document.getElementById('step-1');
-      if (step1) {
-        step1.insertBefore(errorElement, step1.querySelector('.form-row'));
-      }
+    // Ajouter des validations personnalisées aux champs readonly
+    const entrepriseField = document.getElementById('entreprise_name');
+    const adresseField = document.getElementById('adresse');
+    
+    if (entrepriseField) {
+      entrepriseField.addEventListener('invalid', function(e) {
+        if (this.readOnly && this.value.trim()) {
+          e.preventDefault(); // Empêcher l'affichage de l'erreur par défaut
+        }
+      });
     }
     
-    errorElement.textContent = message;
-    errorElement.style.display = 'block';
-    errorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    if (adresseField) {
+      adresseField.addEventListener('invalid', function(e) {
+        if (this.readOnly && this.value.trim()) {
+          e.preventDefault(); // Empêcher l'affichage de l'erreur par défaut
+        }
+      });
+    }
+
+    console.log("✅ Validation améliorée pour les champs readonly (mode non-intrusif)");
+  }
+
+  // Fonction pour ajouter un champ caché
+  function addHiddenField(name, value) {
+    // Vérifier si le champ existe déjà
+    let existingField = document.getElementById(name);
+    if (existingField) {
+      existingField.value = value;
+      return;
+    }
+
+    const hiddenField = document.createElement('input');
+    hiddenField.type = 'hidden';
+    hiddenField.id = name;
+    hiddenField.name = name;
+    hiddenField.value = value;
     
-    // Masquer automatiquement après 5 secondes
-    setTimeout(() => {
-      errorElement.style.display = 'none';
-    }, 5000);
+    const form = document.getElementById('enterprise-form');
+    if (form) {
+      form.appendChild(hiddenField);
+    }
+  }
+
+  // Fonction pour gérer la pré-sélection format/mois
+  function setupFormatMonthPreselection(params) {
+    // Écouter les changements d'étapes pour déclencher la pré-sélection au bon moment
+    const observer = new MutationObserver(function(mutations) {
+      mutations.forEach(function(mutation) {
+        if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+          const target = mutation.target;
+          
+          // Si on arrive à l'étape 2 (formats)
+          if (target.id === 'step-2' && target.classList.contains('active') && params.format) {
+            setTimeout(() => preselectFormat(params.format), 200);
+          }
+          
+          // Si on arrive à l'étape 3 (mois)
+          if (target.id === 'step-3' && target.classList.contains('active') && params.mois) {
+            setTimeout(() => preselectMonth(safeDecodeURIComponent(params.mois)), 200);
+          }
+        }
+      });
+    });
+
+    // Observer les changements sur les sections d'étapes
+    const sections = document.querySelectorAll('.form-section');
+    sections.forEach(section => {
+      observer.observe(section, { attributes: true, attributeFilter: ['class'] });
+    });
   }
 
   // Fonction utilitaire pour obtenir les paramètres d'URL
@@ -233,8 +200,11 @@
       console.log(`✅ Champ ${id} rempli avec:`, finalValue);
       
       // Déclencher l'événement change pour la validation
-      const changeEvent = new Event('change', { bubbles: true });
-      field.dispatchEvent(changeEvent);
+      const events = ['input', 'change', 'blur'];
+      events.forEach(eventType => {
+        const event = new Event(eventType, { bubbles: true });
+        field.dispatchEvent(event);
+      });
       
       // Ajouter une classe pour l'animation
       field.classList.add('just-prefilled');
@@ -257,6 +227,17 @@
       field.style.backgroundColor = '#f5f5f5';
       field.style.cursor = 'not-allowed';
       field.style.color = '#555';
+      field.style.border = '1px solid #ddd';
+      
+      // Ajouter un attribut pour identifier les champs pré-remplis
+      field.setAttribute('data-prefilled', 'true');
+      
+      // Déclencher les événements pour la validation
+      const events = ['input', 'change', 'blur'];
+      events.forEach(eventType => {
+        const event = new Event(eventType, { bubbles: true });
+        field.dispatchEvent(event);
+      });
       
       // Ajouter une classe pour l'animation
       field.classList.add('just-prefilled');
@@ -270,41 +251,28 @@
 
   // Fonction pour pré-sélectionner un format
   function preselectFormat(format) {
-    // Attendre que le JavaScript principal soit chargé
-    const checkFormatCards = () => {
-      const formatCard = document.querySelector(`.format-card[data-format="${format}"]`);
-      if (formatCard) {
-        formatCard.click();
-        formatCard.classList.add('pre-selected');
-        console.log(`🎨 Format ${format} pré-sélectionné`);
-      } else {
-        console.warn(`⚠️ Format card pour ${format} non trouvée`);
-      }
-    };
-
-    // Essayer maintenant, puis réessayer si nécessaire
-    checkFormatCards();
-    setTimeout(checkFormatCards, 500);
-    setTimeout(checkFormatCards, 1500);
+    const formatCard = document.querySelector(`.format-card[data-format="${format}"]`);
+    if (formatCard && !formatCard.classList.contains('selected')) {
+      // Simuler un clic pour déclencher la logique existante
+      formatCard.click();
+      formatCard.classList.add('pre-selected');
+      console.log(`🎨 Format ${format} pré-sélectionné`);
+    } else if (!formatCard) {
+      console.warn(`⚠️ Format card pour ${format} non trouvée`);
+    }
   }
 
   // Fonction pour pré-sélectionner un mois
   function preselectMonth(mois) {
-    const checkMonthCards = () => {
-      const monthCard = document.querySelector(`.month-card[data-month="${mois}"]`);
-      if (monthCard) {
-        monthCard.click();
-        monthCard.classList.add('pre-selected');
-        console.log(`📅 Mois ${mois} pré-sélectionné`);
-      } else {
-        console.warn(`⚠️ Month card pour ${mois} non trouvée`);
-      }
-    };
-
-    // Essayer maintenant, puis réessayer si nécessaire
-    checkMonthCards();
-    setTimeout(checkMonthCards, 500);
-    setTimeout(checkMonthCards, 1500);
+    const monthCard = document.querySelector(`.month-card[data-month="${mois}"]`);
+    if (monthCard && !monthCard.classList.contains('selected')) {
+      // Simuler un clic pour déclencher la logique existante
+      monthCard.click();
+      monthCard.classList.add('pre-selected');
+      console.log(`📅 Mois ${mois} pré-sélectionné`);
+    } else if (!monthCard) {
+      console.warn(`⚠️ Month card pour ${mois} non trouvée`);
+    }
   }
 
   // Fonction pour ajouter un indicateur visuel de pré-remplissage
@@ -312,6 +280,7 @@
     const header = document.querySelector('header');
     if (header && params.nom) {
       const indicator = document.createElement('div');
+      indicator.className = 'prefill-indicator';
       indicator.style.cssText = `
         background: linear-gradient(135deg, #4CAF50, #45a049);
         color: white;
@@ -338,6 +307,43 @@
     }
   }
 
+  // Fonction pour afficher une erreur personnalisée
+  function showCustomError(message) {
+    // Créer ou récupérer un élément d'erreur global
+    let errorElement = document.getElementById('custom-error-message');
+    if (!errorElement) {
+      errorElement = document.createElement('div');
+      errorElement.id = 'custom-error-message';
+      errorElement.style.cssText = `
+        color: #e63946;
+        background-color: rgba(230, 57, 70, 0.1);
+        padding: 12px 15px;
+        border-radius: 5px;
+        margin-bottom: 15px;
+        border-left: 4px solid #e63946;
+        font-weight: bold;
+        display: block;
+        position: fixed;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 10000;
+        max-width: 90%;
+        text-align: center;
+      `;
+      
+      document.body.appendChild(errorElement);
+    }
+    
+    errorElement.textContent = message;
+    errorElement.style.display = 'block';
+    
+    // Masquer automatiquement après 5 secondes
+    setTimeout(() => {
+      errorElement.style.display = 'none';
+    }, 5000);
+  }
+
   // 🔧 Fonction utilitaire pour déboguer
   window.debugPrefill = function() {
     const params = getUrlParams();
@@ -354,6 +360,7 @@
           value: field.value,
           readonly: field.readOnly,
           required: field.required,
+          prefilled: field.getAttribute('data-prefilled'),
           style: field.style.backgroundColor
         });
       } else {
@@ -364,6 +371,40 @@
     // Vérifier si le formulaire est marqué comme pré-rempli
     const form = document.getElementById('enterprise-form');
     console.log("Formulaire pré-rempli:", form?.getAttribute('data-prefilled'));
+    
+    // Vérifier les gestionnaires d'événements
+    const nextStep1 = document.getElementById('next-step-1');
+    const nextStep2 = document.getElementById('next-step-2');
+    const prevStep2 = document.getElementById('prev-step-2');
+    
+    console.log("Boutons étape 1:", {
+      nextStep1: !!nextStep1,
+      hasOnclick: !!nextStep1?.onclick,
+      hasEventListeners: !!nextStep1?.addEventListener
+    });
+    
+    console.log("Boutons étape 2:", {
+      nextStep2: !!nextStep2,
+      prevStep2: !!prevStep2,
+      nextHasOnclick: !!nextStep2?.onclick,
+      prevHasOnclick: !!prevStep2?.onclick
+    });
+  };
+
+  // Fonction pour vérifier que les scripts ne se marchent pas dessus
+  window.checkScriptConflict = function() {
+    console.log("🔍 Vérification des conflits de scripts:");
+    
+    // Vérifier si enterprise-form.js a chargé ses variables
+    console.log("Variables globales détectées:", {
+      currentStep: typeof currentStep !== 'undefined' ? currentStep : 'undefined',
+      selectedFormat: typeof selectedFormat !== 'undefined' ? selectedFormat : 'undefined',
+      showStep: typeof showStep !== 'undefined' ? 'function exists' : 'undefined'
+    });
+    
+    // Vérifier l'ordre de chargement des scripts
+    const scripts = Array.from(document.querySelectorAll('script[src]')).map(s => s.src);
+    console.log("Scripts chargés dans l'ordre:", scripts);
   };
 
 })();
