@@ -381,13 +381,10 @@
       <p>Merci de compléter avec soin toutes les sections pertinentes - votre contribution est essentielle au succès de notre calendrier 2026 !</p>
     </div>
     
-<form id="qualification-form" name="qualification-form" method="POST" data-netlify="true" netlify-honeypot="bot-field" action="/" data-netlify-success-url="/qualification/index.html">
-      <!-- Champs cachés pour Netlify -->
+<form id="qualification-form" name="qualification-form" method="POST" action="/" data-netlify-success-url="/qualification/index.html">
+      <!-- Champs cachés -->
       <input type="hidden" name="form-name" value="qualification-form">
       <input type="hidden" id="prospecteur_id" name="prospecteur_id" value="">
-      <p class="hidden">
-        <label>Ne pas remplir si vous êtes humain : <input name="bot-field"></label>
-      </p>
       
       <div class="form-section">
         <div class="section-title">ÉTAPE 1 : INFORMATIONS DE CONTACT</div>
@@ -612,85 +609,38 @@
     let communesLoaded = false;
     
     
-    // Récupérer les entreprises depuis l'API existante
-    async function loadEnterprisesAndCommunes() {
-      try {
-        // Afficher un indicateur de chargement
-        const enterpriseDisplay = document.getElementById('entreprise_display');
-        const originalValue = enterpriseDisplay.value;
-        enterpriseDisplay.value = "Chargement des données...";
-        
-        // Les communes seront chargées automatiquement
-        
-        const response = await fetch('https://n8n.dsolution-ia.fr/webhook/get-enterprises');
-        if (!response.ok) {
-          throw new Error('Erreur lors du chargement des données');
+    // Fonction simplifiée pour initialiser les données d'entreprise depuis l'URL
+    function initializeEnterpriseFromURL() {
+      // Récupérer l'entreprise depuis l'URL
+      const urlParams = new URLSearchParams(window.location.search);
+      const enterpriseId = urlParams.get('eid') || urlParams.get('id');
+      const enterpriseName = urlParams.get('nom');
+      const commune = urlParams.get('commune');
+      
+      // Remplir les champs d'entreprise
+      if (enterpriseId) {
+        document.getElementById('entreprise').value = enterpriseId;
+      }
+      
+      if (enterpriseName) {
+        try {
+          const nomDecodé = decodeURIComponent(enterpriseName);
+          document.getElementById('entreprise_display').value = nomDecodé;
+        } catch(e) {
+          document.getElementById('entreprise_display').value = enterpriseName;
         }
-        
-        const data = await response.json();
-        console.log('Données reçues de l\'API:', data);
-        
-        // Restaurer la valeur originale
-        enterpriseDisplay.value = originalValue;
-        
-        // Si les données sont un tableau d'entreprises (ancien format)
-        if (Array.isArray(data)) {
-          console.log('Format de données: tableau simple');
-          return data;
-        } 
-        // Si les données contiennent des entreprises et communes (nouveau format)
-        else if (data.enterprises || data.communes) {
-          console.log('Format de données: objet avec enterprises et communes');
-          return data.enterprises || [];
-        }
-        // Format inconnu, essayer de deviner
-        else {
-          console.warn('Format de données inconnu, tentative d\'interprétation');
-          let enterprises = [];
-          
-          if (typeof data === 'object' && data !== null) {
-            if (data.json && Array.isArray(data.json)) {
-              enterprises = data.json;
-            } else {
-              enterprises = [data];
-            }
-          }
-          
-          return enterprises;
-        }
-      } catch (error) {
-        console.error('Erreur lors du chargement des entreprises:', error);
-        // En cas d'erreur, créer des données factices pour permettre au formulaire de fonctionner
-        const mockEnterprises = [];
-        
-        // Récupérer l'entreprise depuis l'URL
-        const urlParams = new URLSearchParams(window.location.search);
-        const enterpriseId = urlParams.get('eid') || urlParams.get('id');
-        const enterpriseName = urlParams.get('nom');
-        
-        if (enterpriseId && enterpriseName) {
-          mockEnterprises.push({
-            id: enterpriseId,
-            nom_entreprise: decodeURIComponent(enterpriseName),
-            commune: "CLERMONT-L'HERAULT"
-          });
-        }
-        
-        // Restaurer l'affichage
-        const enterpriseDisplay = document.getElementById('entreprise_display');
-        enterpriseDisplay.value = enterpriseName ? decodeURIComponent(enterpriseName) : "";
-        
-        return mockEnterprises;
+      }
+      
+      if (commune) {
+        document.getElementById('commune_entreprise').value = commune;
       }
     }
     
     
     // Récupérer l'ID du prospecteur et autres paramètres depuis l'URL
     document.addEventListener('DOMContentLoaded', function() {
-      // Charger les entreprises et communes
-      loadEnterprisesAndCommunes().then(enterprises => {
-        console.log(`${enterprises.length} entreprises chargées`);
-      });
+      // Initialiser les données d'entreprise depuis l'URL
+      initializeEnterpriseFromURL();
       
       const urlParams = new URLSearchParams(window.location.search);
       const prospecteurId = urlParams.get('pid');
@@ -1085,36 +1035,8 @@
         submitButton.disabled = false;
         submitButton.innerHTML = 'SOUMETTRE LA QUALIFICATION';
         
-        // En cas d'échec du webhook, soumettre via Netlify Forms
-        alert('Problème de connexion au serveur. Tentative alternative d\'envoi du formulaire...');
-        
-        const netlifyForm = document.createElement('form');
-        netlifyForm.method = 'POST';
-        netlifyForm.action = '/';
-        netlifyForm.setAttribute('data-netlify', 'true');
-        netlifyForm.setAttribute('name', 'qualification-form');
-        
-        // Ajouter chaque champ au formulaire Netlify
-        Object.keys(formObject).forEach(key => {
-          if (key !== 'form-name' && key !== 'bot-field') {
-            const input = document.createElement('input');
-            input.type = 'hidden';
-            input.name = key;
-            input.value = formObject[key];
-            netlifyForm.appendChild(input);
-          }
-        });
-        
-        // Ajouter le champ form-name
-        const formNameInput = document.createElement('input');
-        formNameInput.type = 'hidden';
-        formNameInput.name = 'form-name';
-        formNameInput.value = 'qualification-form';
-        netlifyForm.appendChild(formNameInput);
-        
-        // Ajouter le formulaire au document et le soumettre
-        document.body.appendChild(netlifyForm);
-        netlifyForm.submit();
+        // Afficher un message d'erreur
+        alert('Problème de connexion au serveur. Veuillez réessayer plus tard ou contacter l\'administrateur.');
       }
     });
     
