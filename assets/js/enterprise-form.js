@@ -604,3 +604,12 @@ function showConfirmation(formData, gatewayResponse) {
     }
   }
 })();
+
+// ✅ APPEL DE LA FONCTION DE SOUMISSION - À AJOUTER À LA FIN
+document.addEventListener('DOMContentLoaded', function() {
+  // Attendre que l'initialisation soit terminée
+  setTimeout(() => {
+    setupFormSubmission();
+    console.log("✅ setupFormSubmission() appelée");
+  }, 1500);
+});
