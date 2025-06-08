@@ -679,6 +679,13 @@ function validateFormBeforeSubmit() {
 function setupFormSubmission() {
   const form = document.getElementById('prospecteur-form');
   
+  // ✅ Vérifier si c'est le formulaire enterprise-form et l'ignorer
+  const enterpriseForm = document.getElementById('enterprise-form');
+  if (enterpriseForm) {
+    console.log('⚠️ enterprise-form ignoré par main.js');
+    return; // Sortir pour laisser enterprise-form.js gérer
+  }
+  
   if (!form) {
     console.log('Formulaire prospecteur non trouvé sur cette page');
     return;
