@@ -7,6 +7,33 @@ function setupFormSubmission() {
   // ✅ VARIABLE POUR EMPÊCHER DOUBLE SOUMISSION
   let isSubmitting = false;
   
+  // 💰 FONCTION DE CALCUL DU PRIX TOTAL
+  function calculateTotalPrice() {
+    // Vérifier que nous avons les données nécessaires
+    if (!window.selectedFormat || !window.formatPrice) {
+      console.warn('⚠️ Données manquantes pour le calcul du prix:', { 
+        selectedFormat: window.selectedFormat, 
+        formatPrice: window.formatPrice 
+      });
+      return 0;
+    }
+    
+    let total = 0;
+    
+    if (window.isAnnualOffer) {
+      // Pour l'offre annuelle, le prix est forfaitaire
+      total = window.formatPrice; // 1800€ pour 12PARUTIONS
+      console.log('💰 Calcul offre annuelle:', total + '€');
+    } else {
+      // Pour les autres formats, multiplier par le nombre de mois
+      const nombreMois = window.selectedMonths?.length || 1;
+      total = window.formatPrice * nombreMois;
+      console.log('💰 Calcul standard:', `${window.formatPrice}€ x ${nombreMois} mois = ${total}€`);
+    }
+    
+    return total;
+  }
+  
   form.addEventListener('submit', function(e) {
     e.preventDefault();
     e.stopPropagation(); // ✅ Empêcher propagation
@@ -20,7 +47,7 @@ function setupFormSubmission() {
     console.log('📤 Début soumission formulaire');
     
     // Validation finale
-    if (!selectedPayment) {
+    if (!window.selectedPayment) {
       const errorEl = document.getElementById('payment-error');
       if (errorEl) errorEl.style.display = 'block';
       return;
@@ -50,6 +77,9 @@ function setupFormSubmission() {
     const formInputs = form.querySelectorAll('input, select, textarea, button');
     formInputs.forEach(input => input.disabled = true);
     
+    // 💰 CALCULER LE PRIX TOTAL
+    const calculatedTotal = calculateTotalPrice();
+    
     // Construction du payload
     const payload = {
       form_name: "enterprise-form",
@@ -65,21 +95,21 @@ function setupFormSubmission() {
       telephone: document.getElementById('telephone').value,
       
       // Format et prix
-      selected_format: selectedFormat,
-      format_price: formatPrice,
+      selected_format: window.selectedFormat,
+      format_price: window.formatPrice,
       
       // Mois sélectionnés
-      selected_months: selectedMonths.join(','),
-      nombre_parutions: isAnnualOffer ? 12 : selectedMonths.length,
-      is_annual_offer: isAnnualOffer,
+      selected_months: window.selectedMonths ? window.selectedMonths.join(',') : '',
+      nombre_parutions: window.isAnnualOffer ? 12 : (window.selectedMonths?.length || 1),
+      is_annual_offer: window.isAnnualOffer || false,
       
       // Paiement
-      selected_payment: selectedPayment,
+      selected_payment: window.selectedPayment,
       payment_details: document.querySelector('.payment-card.selected')?.getAttribute('data-details') || '',
       rdv_preference: document.getElementById('rdv_preference')?.value || '',
       
-      // Calculs
-      prixTotal: window.calculatedTotal || 0,
+      // ✅ PRIX TOTAL CALCULÉ CORRECTEMENT
+      prixTotal: calculatedTotal,
       
       // Métadonnées
       orderNumber: 'CMD-2026-' + Math.floor(100000 + Math.random() * 900000),
@@ -87,13 +117,14 @@ function setupFormSubmission() {
       terms_accepted: termsAccepted,
       
       // ID entreprise depuis URL
-      entrepriseId: window.entrepriseId || null,
+      entrepriseId: getEnterpriseIdFromURL(),
       
       // Tracking
       user_agent: navigator.userAgent,      
     };
     
     console.log('📤 Envoi payload JSON vers Gateway:', payload);
+    console.log('💰 Prix total calculé:', calculatedTotal + '€');
     
     // ✅ ENVOI AVEC TIMEOUT ET ABORT CONTROLLER
     const controller = new AbortController();
@@ -149,6 +180,12 @@ function setupFormSubmission() {
       console.log('⚠️ Enter bloqué pendant soumission');
     }
   });
+}
+
+// 🆔 FONCTION UTILITAIRE pour récupérer l'ID entreprise depuis l'URL
+function getEnterpriseIdFromURL() {
+  const urlParams = new URLSearchParams(window.location.search);
+  return urlParams.get('id') || urlParams.get('eid') || null;
 }
 
 // ✅ MODIFICATION DE showConfirmation pour ne PAS réactiver le formulaire
