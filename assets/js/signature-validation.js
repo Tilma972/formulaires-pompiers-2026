@@ -1,24 +1,24 @@
-// 🔐 SIGNATURE-VALIDATION.JS - Version 1.0
-// Script complet de gestion de la signature électronique
+// 🔐 SIGNATURE-VALIDATION.JS - Version 2.0 (Updated with signature choice)
+// Script complet de gestion de la signature électronique et physique
 // Compatible avec le formulaire enterprise-form
 
 (function() {
   'use strict';
   
-  console.log('🔐 Chargement du module signature électronique...');
+  console.log('🔐 Chargement du module signature électronique et physique...');
   
   // =====================================================
-  // 📋 CONFIGURATION ET CONSTANTS
+  // 📋 VARIABLES GLOBALES
   // =====================================================
   
-  const SIGNATURE_CONFIG = {
-    minPasswordLength: 6,
-    validationIdPrefix: 'SIGN-2026',
-    ipServiceUrl: 'https://api.ipify.org?format=json',
-    ipFallback: 'Non disponible',
-    hashAlgorithm: 'simple', // 'simple' ou 'crypto' (si crypto.subtle disponible)
-    enableRealTimeValidation: true,
-    debugMode: false
+  let signatureMethod = 'electronic'; // Par défaut : électronique
+  let validationData = {
+    timestamp: null,
+    validationId: null,
+    hash: null,
+    userIP: null,
+    userAgent: null,
+    isValid: false
   };
   
   // =====================================================
@@ -26,250 +26,49 @@
   // =====================================================
   
   /**
-   * Logger avec niveau de debug
+   * Utilitaire : Libellé du mode de paiement
    */
-  function debugLog(message, data = null) {
-    if (SIGNATURE_CONFIG.debugMode) {
-      console.log(`🔐 [Signature] ${message}`, data || '');
-    }
-  }
-  
-  /**
-   * Génération d'un ID de validation unique et sécurisé
-   */
-  function generateValidationId() {
-    const timestamp = Date.now();
-    const random = Math.random().toString(36).substr(2, 12);
-    const sessionId = Math.random().toString(36).substr(2, 6);
-    return `${SIGNATURE_CONFIG.validationIdPrefix}-${timestamp}-${random}-${sessionId}`.toUpperCase();
-  }
-  
-  /**
-   * Récupération de l'IP publique avec fallback
-   */
-  async function getUserIP() {
-    try {
-      debugLog('Récupération IP publique...');
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5s timeout
-      
-      const response = await fetch(SIGNATURE_CONFIG.ipServiceUrl, {
-        signal: controller.signal
-      });
-      
-      clearTimeout(timeoutId);
-      
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
-      }
-      
-      const data = await response.json();
-      debugLog('IP récupérée:', data.ip);
-      return data.ip;
-    } catch (error) {
-      debugLog('Erreur récupération IP:', error.message);
-      return SIGNATURE_CONFIG.ipFallback;
-    }
-  }
-  
-  /**
-   * Génération d'un hash de validation
-   */
-  async function generateValidationHash(data) {
-    const dataString = JSON.stringify(data);
-    
-    // Si crypto.subtle est disponible, utiliser SHA-256
-    if (SIGNATURE_CONFIG.hashAlgorithm === 'crypto' && window.crypto && window.crypto.subtle) {
-      try {
-        const encoder = new TextEncoder();
-        const dataBuffer = encoder.encode(dataString);
-        const hashBuffer = await crypto.subtle.digest('SHA-256', dataBuffer);
-        const hashArray = Array.from(new Uint8Array(hashBuffer));
-        return hashArray.map(b => b.toString(16).padStart(2, '0')).join('').toUpperCase();
-      } catch (error) {
-        debugLog('Erreur crypto.subtle, fallback vers hash simple:', error);
-      }
-    }
-    
-    // Hash simple (fallback)
-    let hash = 0;
-    for (let i = 0; i < dataString.length; i++) {
-      const char = dataString.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
-      hash = hash & hash; // Convert to 32-bit integer
-    }
-    
-    return Math.abs(hash).toString(16).toUpperCase().padStart(8, '0');
-  }
-  
-  /**
-   * Normalisation et comparaison de noms
-   */
-  function compareNames(name1, name2) {
-    if (!name1 || !name2) return false;
-    
-    const normalize = (str) => str
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '') // Supprimer les accents
-      .replace(/[^\w\s]/g, '') // Supprimer la ponctuation
-      .replace(/\s+/g, ' ') // Normaliser les espaces
-      .trim()
-      .toLowerCase();
-    
-    const normalized1 = normalize(name1);
-    const normalized2 = normalize(name2);
-    
-    // Comparaison exacte
-    if (normalized1 === normalized2) return true;
-    
-    // Comparaison par mots (ordre différent accepté)
-    const words1 = normalized1.split(' ').sort().join(' ');
-    const words2 = normalized2.split(' ').sort().join(' ');
-    
-    return words1 === words2;
-  }
-  
-  /**
-   * Validation d'email
-   */
-  function isValidEmail(email) {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
-  }
-  
-  // =====================================================
-  // 🎯 FONCTIONS PRINCIPALES DE SIGNATURE
-  // =====================================================
-  
-  /**
-   * Initialisation complète du système de signature
-   */
-  async function initializeDigitalSignature() {
-    debugLog('Initialisation du système de signature électronique...');
-    
-    try {
-      // 1. Générer l'ID de validation
-      const validationId = generateValidationId();
-      const timestampISO = new Date().toISOString();
-      const timestampFormatted = new Date().toLocaleString('fr-FR');
-      
-      // 2. Remplir les champs cachés
-      safeSetValue('validation_id', validationId);
-      safeSetValue('validation_timestamp', timestampISO);
-      safeSetValue('user_agent', navigator.userAgent);
-      
-      // 3. Afficher les informations de traçabilité
-      safeSetText('trace-timestamp', timestampFormatted);
-      safeSetText('trace-validation-id', validationId);
-      safeSetText('trace-ip', 'Récupération...');
-      
-      // 4. Récupérer l'IP (asynchrone)
-      const userIP = await getUserIP();
-      safeSetValue('user_ip', userIP);
-      safeSetText('trace-ip', userIP);
-      
-      // 5. Générer le hash de validation
-      const hashData = {
-        validationId: validationId,
-        timestamp: timestampISO,
-        userAgent: navigator.userAgent,
-        ip: userIP,
-        url: window.location.href
-      };
-      
-      const validationHash = await generateValidationHash(hashData);
-      safeSetValue('validation_hash', validationHash);
-      
-      // 6. Peupler le récapitulatif verrouillé
-      populateLockedSummary();
-      
-      // 7. Attacher les écouteurs d'événements
-      attachSignatureEventListeners();
-      
-      // 8. Animation de sécurité
-      addSecurityAnimation();
-      
-      debugLog('Initialisation signature complétée:', {
-        validationId: validationId,
-        hash: validationHash,
-        ip: userIP
-      });
-      
-      return {
-        success: true,
-        validationId: validationId,
-        hash: validationHash
-      };
-      
-    } catch (error) {
-      console.error('❌ Erreur lors de l\'initialisation de la signature:', error);
-      return {
-        success: false,
-        error: error.message
-      };
-    }
-  }
-  
-  /**
-   * Peuplement du récapitulatif verrouillé
-   */
-  function populateLockedSummary() {
-    debugLog('Peuplement du récapitulatif verrouillé...');
-    
-    // Entreprise
-    const entrepriseName = safeGetValue('entreprise_name') || 'Non spécifié';
-    safeSetText('locked-entreprise', entrepriseName);
-    
-    // Contact
-    const contactName = safeGetValue('contact_name') || 'Non spécifié';
-    safeSetText('locked-contact', contactName);
-    
-    // Format (depuis les variables globales)
-    const format = window.selectedFormat || 'Non sélectionné';
-    safeSetText('locked-format', format);
-    
-    // Mois
-    let monthsText = '-';
-    if (window.isAnnualOffer) {
-      monthsText = 'Tous les mois (12 mois)';
-    } else if (window.selectedMonths && window.selectedMonths.length > 0) {
-      monthsText = window.selectedMonths.join(', ');
-    }
-    safeSetText('locked-months', monthsText);
-    
-    // Mode de paiement
-    const paymentLabels = {
+  function getPaymentLabel(paymentMode) {
+    const labels = {
       'Virement': 'Virement bancaire',
       'Cheque_Remise': 'Chèque - Remise main propre',
       'Cheque_Poste': 'Chèque - Envoi postal',
       'Cheque_Caserne': 'Chèque - Dépôt caserne'
     };
-    const paymentText = paymentLabels[window.selectedPayment] || window.selectedPayment || 'Non sélectionné';
-    safeSetText('locked-payment', paymentText);
-    
-    // Prix total
-    const total = calculateTotalPrice();
-    safeSetText('locked-total', total + ' €');
-    
-    // Mettre à jour les champs du contrat
-    safeSetText('agreement-contact-name', contactName);
-    safeSetText('agreement-company-name', entrepriseName);
-    safeSetText('agreement-total', total);
-    
-    debugLog('Récapitulatif peuplé:', {
-      entreprise: entrepriseName,
-      contact: contactName,
-      format: format,
-      total: total
-    });
+    return labels[paymentMode] || paymentMode || 'Non défini';
   }
   
   /**
-   * Calcul du prix total
+   * Comparaison flexible des noms
+   */
+  function compareNames(original, typed) {
+    // Normaliser les chaînes (supprimer accents, espaces multiples, etc.)
+    const normalize = (str) => str
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '') // Supprimer les accents
+      .replace(/[^\w\s]/g, '') // Supprimer la ponctuation
+      .replace(/\s+/g, ' ') // Normaliser les espaces
+      .trim();
+    
+    const normalizedOriginal = normalize(original);
+    const normalizedTyped = normalize(typed);
+    
+    // Comparaison exacte
+    if (normalizedOriginal === normalizedTyped) return true;
+    
+    // Comparaison par mots (ordre différent accepté)
+    const originalWords = normalizedOriginal.split(' ').sort();
+    const typedWords = normalizedTyped.split(' ').sort();
+    
+    return originalWords.join(' ') === typedWords.join(' ');
+  }
+  
+  /**
+   * Calcul du prix total (réintroduit pour la compatibilité)
    */
   function calculateTotalPrice() {
     if (!window.selectedFormat || !window.formatPrice) {
-      debugLog('Données de prix manquantes, utilisation de 0');
+      console.warn('Données de prix manquantes pour calculateTotalPrice, utilisation de 0');
       return 0;
     }
     
@@ -282,279 +81,451 @@
       total = window.formatPrice * nombreMois;
     }
     
-    debugLog('Prix calculé:', { 
-      format: window.selectedFormat, 
-      price: window.formatPrice, 
-      months: window.selectedMonths?.length || 1, 
-      total: total 
-    });
-    
     return total;
   }
   
+  // =====================================================
+  // 🎯 FONCTIONS PRINCIPALES DE SIGNATURE
+  // =====================================================
+  
   /**
-   * Validation complète de la signature numérique
+   * Initialisation du choix de signature à l'étape 4
    */
-  function validateDigitalSignature() {
-    debugLog('Validation de la signature numérique...');
+  function initializeSignatureChoice() {
+    console.log('🔐 Initialisation choix de signature');
     
-    const errors = [];
-    
-    // 1. Vérifier l'accord contractuel
-    const agreement = safeGetChecked('contractual_agreement');
-    if (!agreement) {
-      errors.push('Vous devez accepter les conditions contractuelles');
-    }
-    
-    // 2. Vérifier le nom de signature
-    const signatureName = safeGetValue('signature_name')?.trim();
-    if (!signatureName) {
-      errors.push('Veuillez saisir votre nom complet');
-    } else {
-      // Vérifier la correspondance avec le contact
-      const contactName = safeGetValue('contact_name')?.trim();
-      if (contactName && !compareNames(contactName, signatureName)) {
-        errors.push(`Le nom saisi "${signatureName}" ne correspond pas au contact principal "${contactName}"`);
-      }
-    }
-    
-    // 3. Vérifier le mot de passe
-    const signaturePassword = safeGetValue('signature_password');
-    if (!signaturePassword || signaturePassword.length < SIGNATURE_CONFIG.minPasswordLength) {
-      errors.push(`Le mot de passe doit contenir au moins ${SIGNATURE_CONFIG.minPasswordLength} caractères`);
-    }
-    
-    // 4. Vérifier les données techniques
-    const validationId = safeGetValue('validation_id');
-    if (!validationId) {
-      errors.push('ID de validation manquant (erreur technique)');
-    }
-    
-    const validationHash = safeGetValue('validation_hash');
-    if (!validationHash) {
-      errors.push('Hash de validation manquant (erreur technique)');
-    }
-    
-    // 5. Afficher les erreurs ou valider
-    if (errors.length > 0) {
-      alert('⚠️ Erreur(s) de validation :\n\n' + errors.map(e => '• ' + e).join('\n'));
-      debugLog('Validation échouée:', errors);
-      return false;
-    }
-    
-    debugLog('Validation réussie:', {
-      agreement: agreement,
-      signatureName: signatureName,
-      validationId: validationId
+    // Attacher les événements de choix
+    const signatureRadios = document.querySelectorAll('input[name="signature_method"]');
+    signatureRadios.forEach(radio => {
+      radio.addEventListener('change', handleSignatureMethodChange);
     });
     
-    return true;
+    // Initialiser avec la méthode par défaut (ou celle déjà sélectionnée si retour arrière)
+    const currentSelectedMethod = document.querySelector('input[name="signature_method"]:checked')?.value || 'electronic';
+    handleSignatureMethodChange({ target: { value: currentSelectedMethod } });
+    
+    // Mettre à jour le récapitulatif
+    updateLockedSummary();
+    
+    // Initialiser la signature électronique si sélectionnée
+    if (signatureMethod === 'electronic') {
+      initializeDigitalSignature();
+    }
+    
+    console.log('✅ Choix de signature initialisé');
   }
   
-  // =====================================================
-  // 🎨 VALIDATION EN TEMPS RÉEL
-  // =====================================================
+  /**
+   * Gestion du changement de méthode de signature
+   */
+  function handleSignatureMethodChange(event) {
+    signatureMethod = event.target.value;
+    
+    console.log('🔄 Changement méthode signature:', signatureMethod);
+    
+    const electronicSection = document.getElementById('electronic-signature-section');
+    const physicalSection = document.getElementById('physical-signature-section');
+    const submitButton = document.getElementById('submit-button');
+    const submitText = document.getElementById('submit-text');
+    
+    if (signatureMethod === 'electronic') {
+      // Afficher section électronique
+      if (electronicSection) electronicSection.style.display = 'block';
+      if (physicalSection) physicalSection.style.display = 'none';
+      
+      // Mettre à jour le bouton
+      if (submitButton) submitButton.className = 'btn btn-primary electronic-mode';
+      if (submitText) submitText.textContent = '🔐 SIGNER ÉLECTRONIQUEMENT';
+      
+      // Initialiser la signature électronique
+      setTimeout(() => {
+        initializeDigitalSignature();
+      }, 300);
+      
+    } else if (signatureMethod === 'physical') {
+      // Afficher section physique
+      if (electronicSection) electronicSection.style.display = 'none';
+      if (physicalSection) physicalSection.style.display = 'block';
+      
+      // Mettre à jour le bouton
+      if (submitButton) submitButton.className = 'btn btn-primary physical-mode';
+      if (submitText) submitText.textContent = '📄 GÉNÉRER DOCUMENT À SIGNER';
+      
+      // Réinitialiser les données de signature électronique
+      resetDigitalSignatureData();
+    }
+    
+    // Mettre à jour la validation du formulaire
+    updateFormValidation();
+  }
   
   /**
-   * Validation en temps réel du nom
+   * Initialisation de la signature électronique
    */
-  function validateSignatureNameRealTime(input) {
-    if (!SIGNATURE_CONFIG.enableRealTimeValidation) return;
+  function initializeDigitalSignature() {
+    console.log('🔐 Initialisation signature électronique');
     
-    const signatureName = input.value.trim();
-    const contactName = safeGetValue('contact_name')?.trim();
+    // Générer les données de traçabilité
+    generateTraceabilityData();
     
-    // Reset classes
-    input.classList.remove('valid', 'invalid');
+    // Mettre à jour le récapitulatif verrouillé
+    updateLockedSummary();
     
-    if (!signatureName) {
-      hideError('signature-name-error');
+    // Attacher les événements de validation
+    attachSignatureEvents();
+    
+    // Récupérer l'IP utilisateur
+    fetchUserIP();
+  }
+  
+  /**
+   * Génération des données de traçabilité
+   */
+  function generateTraceabilityData() {
+    const now = new Date();
+    
+    validationData.timestamp = now.toISOString();
+    validationData.validationId = `VAL-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    validationData.userAgent = navigator.userAgent;
+    
+    // Afficher dans l'interface
+    const traceTimestampEl = document.getElementById('trace-timestamp');
+    if (traceTimestampEl) traceTimestampEl.textContent = now.toLocaleString('fr-FR');
+    
+    const traceValidationIdEl = document.getElementById('trace-validation-id');
+    if (traceValidationIdEl) traceValidationIdEl.textContent = validationData.validationId;
+    
+    // Remplir les champs cachés
+    const validationTimestampEl = document.getElementById('validation_timestamp');
+    if (validationTimestampEl) validationTimestampEl.value = validationData.timestamp;
+    
+    const validationIdEl = document.getElementById('validation_id');
+    if (validationIdEl) validationIdEl.value = validationData.validationId;
+    
+    const userAgentEl = document.getElementById('user_agent');
+    if (userAgentEl) userAgentEl.value = validationData.userAgent;
+    
+    console.log('📊 Données de traçabilité générées:', validationData.validationId);
+  }
+  
+  /**
+   * Récupération de l'IP utilisateur
+   */
+  async function fetchUserIP() {
+    try {
+      const response = await fetch('https://api.ipify.org?format=json');
+      const data = await response.json();
+      validationData.userIP = data.ip;
+      
+      const traceIpEl = document.getElementById('trace-ip');
+      if (traceIpEl) traceIpEl.textContent = data.ip;
+      
+      const userIpEl = document.getElementById('user_ip');
+      if (userIpEl) userIpEl.value = data.ip;
+      
+      console.log('🌐 IP utilisateur récupérée:', data.ip);
+    } catch (error) {
+      console.warn('⚠️ Impossible de récupérer l\'IP:', error);
+      validationData.userIP = 'Non disponible';
+      const traceIpEl = document.getElementById('trace-ip');
+      if (traceIpEl) traceIpEl.textContent = 'Non disponible';
+    }
+  }
+  
+  /**
+   * Mise à jour du récapitulatif verrouillé
+   */
+  function updateLockedSummary() {
+    const entrepriseName = document.getElementById('entreprise_name')?.value || 'Non défini';
+    const contactName = document.getElementById('contact_name')?.value || 'Non défini';
+    const selectedFormat = window.selectedFormat || 'Non défini';
+    const selectedMonths = window.isAnnualOffer ? 'Tous les mois (12 mois)' : (window.selectedMonths ? window.selectedMonths.join(', ') : 'Non défini');
+    const selectedPayment = getPaymentLabel(window.selectedPayment);
+    const totalPrice = window.calculateTotalPrice ? window.calculateTotalPrice() : 0; // Use global calculateTotalPrice
+    
+    // Mettre à jour l'affichage dans les deux récapitulatifs
+    ['summary-', 'locked-'].forEach(prefix => {
+      const entrepriseEl = document.getElementById(prefix + 'entreprise');
+      const contactEl = document.getElementById(prefix + 'contact');
+      const formatEl = document.getElementById(prefix + 'format');
+      const monthsEl = document.getElementById(prefix + 'months');
+      const paymentEl = document.getElementById(prefix + 'payment');
+      const totalEl = document.getElementById(prefix + 'total');
+      
+      if (entrepriseEl) entrepriseEl.textContent = entrepriseName;
+      if (contactEl) contactEl.textContent = contactName;
+      if (formatEl) formatEl.textContent = selectedFormat;
+      if (monthsEl) monthsEl.textContent = selectedMonths;
+      if (paymentEl) paymentEl.textContent = selectedPayment;
+      if (totalEl) totalEl.textContent = totalPrice + ' €';
+    });
+    
+    // Mettre à jour les zones d'accord pour signature électronique
+    const agreementContactEl = document.getElementById('agreement-contact-name');
+    const agreementCompanyEl = document.getElementById('agreement-company-name');
+    const agreementTotalEl = document.getElementById('agreement-total');
+    
+    if (agreementContactEl) agreementContactEl.textContent = contactName;
+    if (agreementCompanyEl) agreementCompanyEl.textContent = entrepriseName;
+    if (agreementTotalEl) agreementTotalEl.textContent = totalPrice;
+    
+    console.log('📋 Récapitulatif mis à jour');
+  }
+  
+  /**
+   * Attacher les événements de validation signature électronique
+   */
+  function attachSignatureEvents() {
+    const agreementCheckbox = document.getElementById('contractual_agreement');
+    const signatureName = document.getElementById('signature_name');
+    const signaturePassword = document.getElementById('signature_password');
+    
+    if (!agreementCheckbox || !signatureName || !signaturePassword) {
+      console.warn('⚠️ Éléments de signature non trouvés');
       return;
     }
     
-    if (contactName && compareNames(contactName, signatureName)) {
-      input.classList.add('valid');
-      hideError('signature-name-error');
-    } else {
-      input.classList.add('invalid');
-      if (contactName) {
-        showError('signature-name-error', `Le nom doit correspondre à "${contactName}"`);
+    // Validation en temps réel
+    agreementCheckbox.addEventListener('change', validateSignatureStep);
+    signatureName.addEventListener('input', validateSignatureStep);
+    signaturePassword.addEventListener('input', validateSignatureStep);
+    
+    // Validation du nom en temps réel
+    signatureName.addEventListener('input', function() {
+      validateNameMatch(this.value);
+    });
+    
+    console.log('🔗 Événements de signature attachés');
+  }
+  
+  /**
+   * Validation du nom saisi
+   */
+  function validateNameMatch(typedName) {
+    const contactName = document.getElementById('contact_name')?.value?.trim().toLowerCase() || '';
+    const typedNameLower = typedName.trim().toLowerCase();
+    const nameInput = document.getElementById('signature_name');
+    const errorElement = document.getElementById('signature-name-error');
+    
+    if (!nameInput || !errorElement) return false;
+    
+    // Fonction de comparaison flexible
+    const isMatch = compareNames(contactName, typedNameLower);
+    
+    if (typedName.length > 3) { // Commencer la validation après 3 caractères
+      if (isMatch) {
+        nameInput.classList.remove('invalid');
+        nameInput.classList.add('valid');
+        errorElement.style.display = 'none';
+      } else {
+        nameInput.classList.remove('valid');
+        nameInput.classList.add('invalid');
+        errorElement.style.display = 'block';
+        errorElement.textContent = `Le nom doit correspondre à "${document.getElementById('contact_name')?.value || 'contact principal'}"`;
       }
-    }
-  }
-  
-  /**
-   * Validation en temps réel du mot de passe
-   */
-  function validateSignaturePasswordRealTime(input) {
-    if (!SIGNATURE_CONFIG.enableRealTimeValidation) return;
-    
-    const password = input.value;
-    
-    // Reset classes
-    input.classList.remove('valid', 'invalid');
-    
-    if (password.length >= SIGNATURE_CONFIG.minPasswordLength) {
-      input.classList.add('valid');
-      hideError('password-error');
-    } else if (password.length > 0) {
-      input.classList.add('invalid');
-      showError('password-error', `Minimum ${SIGNATURE_CONFIG.minPasswordLength} caractères requis`);
     } else {
-      hideError('password-error');
+      nameInput.classList.remove('valid', 'invalid');
+      errorElement.style.display = 'none';
     }
-  }
-  
-  /**
-   * Validation de l'accord contractuel
-   */
-  function validateContractualAgreementRealTime(checkbox) {
-    if (checkbox.checked) {
-      hideError('agreement-error');
-    }
-  }
-  
-  // =====================================================
-  // 🔗 GESTIONNAIRES D'ÉVÉNEMENTS
-  // =====================================================
-  
-  /**
-   * Attacher tous les écouteurs d'événements de signature
-   */
-  function attachSignatureEventListeners() {
-    debugLog('Attachement des écouteurs d\'événements...');
     
-    // Validation en temps réel du nom
-    const signatureNameInput = document.getElementById('signature_name');
-    if (signatureNameInput) {
-      signatureNameInput.addEventListener('input', function() {
-        validateSignatureNameRealTime(this);
-      });
+    return isMatch;
+  }
+  
+  /**
+   * Validation globale de l'étape signature électronique
+   */
+  function validateSignatureStep() {
+    if (signatureMethod !== 'electronic') return true;
+    
+    const agreement = document.getElementById('contractual_agreement')?.checked || false;
+    const nameValid = validateNameMatch(document.getElementById('signature_name')?.value || '');
+    const passwordValid = (document.getElementById('signature_password')?.value?.length || 0) >= 6;
+    
+    // Mettre à jour l'état de validation
+    validationData.isValid = agreement && nameValid && passwordValid;
+    
+    // Générer le hash si tout est valide
+    if (validationData.isValid) {
+      generateValidationHash();
       
-      signatureNameInput.addEventListener('blur', function() {
-        validateSignatureNameRealTime(this);
-      });
-    }
-    
-    // Validation en temps réel du mot de passe
-    const signaturePasswordInput = document.getElementById('signature_password');
-    if (signaturePasswordInput) {
-      signaturePasswordInput.addEventListener('input', function() {
-        validateSignaturePasswordRealTime(this);
-      });
-    }
-    
-    // Checkbox contractuel
-    const contractualAgreement = document.getElementById('contractual_agreement');
-    if (contractualAgreement) {
-      contractualAgreement.addEventListener('change', function() {
-        validateContractualAgreementRealTime(this);
-      });
-    }
-    
-    debugLog('Écouteurs d\'événements attachés');
-  }
-  
-  // =====================================================
-  // 🎭 ANIMATIONS ET EFFETS VISUELS
-  // =====================================================
-  
-  /**
-   * Animation de sécurité pour la section signature
-   */
-  function addSecurityAnimation() {
-    const signatureSection = document.querySelector('.signature-validation-section');
-    if (signatureSection) {
-      signatureSection.classList.add('validated');
-      setTimeout(() => {
-        signatureSection.classList.remove('validated');
-      }, 600);
-    }
-  }
-  
-  // =====================================================
-  // 🛠️ FONCTIONS UTILITAIRES DOM
-  // =====================================================
-  
-  function safeGetValue(id) {
-    const element = document.getElementById(id);
-    return element ? element.value : null;
-  }
-  
-  function safeSetValue(id, value) {
-    const element = document.getElementById(id);
-    if (element) {
-      element.value = value || '';
-    }
-  }
-  
-  function safeGetChecked(id) {
-    const element = document.getElementById(id);
-    return element ? element.checked : false;
-  }
-  
-  function safeSetText(id, text) {
-    const element = document.getElementById(id);
-    if (element) {
-      element.textContent = text || '';
-    }
-  }
-  
-  function showError(id, message) {
-    const element = document.getElementById(id);
-    if (element) {
-      element.textContent = message;
-      element.style.display = 'block';
-    }
-  }
-  
-  function hideError(id) {
-    const element = document.getElementById(id);
-    if (element) {
-      element.style.display = 'none';
-    }
-  }
-  
-  // =====================================================
-  // 🔧 FONCTIONS DE DEBUG ET DIAGNOSTIQUE
-  // =====================================================
-  
-  /**
-   * Fonction de debug pour diagnostiquer l'état de la signature
-   */
-  function debugSignatureState() {
-    const state = {
-      currentStep: window.currentStep,
-      validationId: safeGetValue('validation_id'),
-      signatureName: safeGetValue('signature_name'),
-      agreement: safeGetChecked('contractual_agreement'),
-      elements: {
-        agreement: !!document.getElementById('contractual_agreement'),
-        name: !!document.getElementById('signature_name'),
-        password: !!document.getElementById('signature_password'),
-        validationId: !!document.getElementById('validation_id'),
-        validationHash: !!document.getElementById('validation_hash')
-      },
-      formData: {
-        entreprise: safeGetValue('entreprise_name'),
-        contact: safeGetValue('contact_name'),
-        selectedFormat: window.selectedFormat,
-        selectedPayment: window.selectedPayment
+      // Animation de succès
+      const section = document.querySelector('.signature-validation-section');
+      if (section) {
+        section.classList.add('validated');
+        setTimeout(() => section.classList.remove('validated'), 600);
       }
+    } else {
+      // Remove validated class if not valid
+      const section = document.querySelector('.signature-validation-section');
+      if (section) {
+        section.classList.remove('validated');
+      }
+    }
+    
+    // Mettre à jour le bouton de soumission
+    updateSubmitButton();
+    
+    console.log('✅ Validation signature:', validationData.isValid);
+    return validationData.isValid;
+  }
+  
+  /**
+   * Génération du hash de validation
+   */
+  function generateValidationHash() {
+    const hashData = {
+      timestamp: validationData.timestamp,
+      validationId: validationData.validationId,
+      entreprise: document.getElementById('entreprise_name')?.value || '',
+      contact: document.getElementById('contact_name')?.value || '',
+      format: window.selectedFormat || '',
+      months: window.selectedMonths ? window.selectedMonths.join(',') : '',
+      total: window.calculateTotalPrice ? window.calculateTotalPrice() : 0,
+      userAgent: validationData.userAgent,
+      ip: validationData.userIP
     };
     
-    console.table(state);
-    return state;
+    // Créer une empreinte simple (pour un vrai hash, utiliser crypto-js)
+    const hashString = JSON.stringify(hashData);
+    validationData.hash = btoa(hashString); // Base64 simple
+    
+    const hashInput = document.getElementById('validation_hash');
+    if (hashInput) hashInput.value = validationData.hash;
+    
+    console.log('🔑 Hash de validation généré');
   }
   
   /**
-   * Test de validation (sans soumission)
+   * Réinitialiser les données de signature électronique
    */
-  function testSignatureValidation() {
-    console.log('🧪 Test de validation signature...');
-    const result = validateDigitalSignature();
-    console.log('Résultat:', result ? '✅ Valide' : '❌ Invalide');
-    return result;
+  function resetDigitalSignatureData() {
+    validationData = {
+      timestamp: null,
+      validationId: null,
+      hash: null,
+      userIP: null,
+      userAgent: null,
+      isValid: false
+    };
+    
+    // Réinitialiser les champs cachés
+    ['validation_timestamp', 'validation_id', 'validation_hash', 'user_ip', 'user_agent'].forEach(id => {
+      const element = document.getElementById(id);
+      if (element) element.value = '';
+    });
+    
+    // Réinitialiser les champs de signature
+    ['contractual_agreement', 'signature_name', 'signature_password'].forEach(id => {
+      const element = document.getElementById(id);
+      if (element) {
+        if (element.type === 'checkbox') {
+          element.checked = false;
+        } else {
+          element.value = '';
+          element.classList.remove('valid', 'invalid');
+        }
+      }
+    });
+    
+    // Cacher les messages d'erreur
+    ['agreement-error', 'signature-name-error', 'password-error'].forEach(id => {
+      const errorElement = document.getElementById(id);
+      if (errorElement) errorElement.style.display = 'none';
+    });
+    
+    // Réinitialiser l'affichage de traçabilité
+    const traceTimestampEl = document.getElementById('trace-timestamp');
+    if (traceTimestampEl) traceTimestampEl.textContent = '-';
+    const traceValidationIdEl = document.getElementById('trace-validation-id');
+    if (traceValidationIdEl) traceValidationIdEl.textContent = '-';
+    const traceIpEl = document.getElementById('trace-ip');
+    if (traceIpEl) traceIpEl.textContent = '-';
+    
+    // Remove validated class
+    const section = document.querySelector('.signature-validation-section');
+    if (section) {
+      section.classList.remove('validated');
+    }
+    
+    console.log('🔄 Données de signature réinitialisées');
+  }
+  
+  /**
+   * Mise à jour du bouton de soumission
+   */
+  function updateSubmitButton() {
+    const submitButton = document.getElementById('submit-button');
+    const submitText = document.getElementById('submit-text');
+    if (!submitButton || !submitText) return;
+    
+    let isValid = true;
+    let buttonText = '';
+    
+    if (signatureMethod === 'electronic') {
+      isValid = validationData.isValid;
+      buttonText = isValid ? '🔐 SIGNER ÉLECTRONIQUEMENT' : 'VEUILLEZ COMPLÉTER LA SIGNATURE';
+    } else {
+      // Pour signature physique, vérifier seulement les conditions générales
+      const termsAccepted = document.getElementById('terms_accepted')?.checked || false;
+      isValid = termsAccepted;
+      buttonText = isValid ? '📄 GÉNÉRER DOCUMENT À SIGNER' : 'VEUILLEZ ACCEPTER LES CONDITIONS';
+    }
+    
+    submitButton.disabled = !isValid;
+    submitText.textContent = buttonText;
+    
+    if (isValid) {
+      submitButton.style.backgroundColor = signatureMethod === 'electronic' ? 'var(--primary)' : 'var(--accent)';
+    } else {
+      submitButton.style.backgroundColor = '#ccc';
+    }
+  }
+  
+  /**
+   * Mise à jour de la validation globale du formulaire
+   */
+  function updateFormValidation() {
+    setTimeout(() => {
+      if (signatureMethod === 'electronic') {
+        validateSignatureStep();
+      } else {
+        updateSubmitButton();
+      }
+    }, 100);
+  }
+  
+  /**
+   * Validation avant soumission finale
+   */
+  function validateBeforeSubmit() {
+    console.log('🔍 Validation avant soumission, méthode:', signatureMethod);
+    
+    if (signatureMethod === 'electronic') {
+      if (!validationData.isValid) {
+        alert('⚠️ Veuillez compléter la signature électronique avant de soumettre votre commande.');
+        
+        // Scroll vers la section signature
+        const signatureSection = document.querySelector('.electronic-signature-section');
+        if (signatureSection) {
+          signatureSection.scrollIntoView({
+            behavior: 'smooth',
+            block: 'center'
+          });
+        }
+        
+        return false;
+      }
+    } else {
+      // Pour signature physique, vérifier les conditions générales
+      const termsAccepted = document.getElementById('terms_accepted')?.checked || false;
+      if (!termsAccepted) {
+        alert('⚠️ Veuillez accepter les conditions générales pour continuer.');
+        return false;
+      }
+    }
+    
+    console.log('✅ Validation signature OK - Prêt pour soumission');
+    return true;
   }
   
   // =====================================================
@@ -562,67 +533,73 @@
   // =====================================================
   
   // Exposer les fonctions principales à l'objet window
-  window.initializeDigitalSignature = initializeDigitalSignature;
-  window.validateDigitalSignature = validateDigitalSignature;
-  window.populateLockedSummary = populateLockedSummary;
-  window.calculateTotalPrice = calculateTotalPrice;
+  window.initializeSignatureChoice = initializeSignatureChoice;
+  window.validateDigitalSignature = validateBeforeSubmit; // Renommé pour la compatibilité
+  window.updateLockedSummary = updateLockedSummary; // Exposer la nouvelle fonction
   
   // Fonctions de debug (disponibles en global)
-  window.debugSignatureState = debugSignatureState;
-  window.testSignatureValidation = testSignatureValidation;
-  
-  // Configuration globale
-  window.SIGNATURE_CONFIG = SIGNATURE_CONFIG;
+  window.debugSignature = function() {
+    console.log('🔍 Debug Signature:', {
+      method: signatureMethod,
+      validationData,
+      isValid: validationData.isValid,
+      hash: validationData.hash
+    });
+  };
   
   // =====================================================
   // 🚀 INITIALISATION AUTOMATIQUE
   // =====================================================
   
-  // Initialisation automatique si on est déjà à l'étape 4
-  document.addEventListener('DOMContentLoaded', function() {
-    setTimeout(() => {
-      if (window.currentStep === 4) {
-        debugLog('Auto-initialisation détectée pour étape 4');
-        initializeDigitalSignature();
+  // Modification de la fonction showStep existante pour intégrer le choix de signature
+  const originalShowStep = window.showStep;
+  window.showStep = function(step) {
+    // Appeler la fonction originale si elle existe
+    if (originalShowStep) {
+      originalShowStep(step);
+    } else {
+      // Implémentation de base si pas d'originalShowStep
+      document.querySelectorAll('.form-section').forEach(section => {
+        section.classList.remove('active');
+      });
+      
+      const targetSection = document.getElementById(`step-${step}`);
+      if (targetSection) {
+        targetSection.classList.add('active');
+        window.currentStep = step;
+        if (window.updateProgressBar) window.updateProgressBar(step); // Ensure updateProgressBar exists
+        window.scrollTo({ top: 0, behavior: 'smooth' });
       }
-    }, 100);
+    }
+    
+    // Si on arrive à l'étape 4, initialiser le choix de signature
+    if (step === 4) {
+      setTimeout(() => {
+        initializeSignatureChoice();
+      }, 500);
+    }
+  };
+  
+  // Modification de la validation du formulaire existante
+  document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('enterprise-form');
+    if (form) {
+      form.addEventListener('submit', function(e) {
+        // Ajouter la validation signature à la validation existante
+        if (!validateBeforeSubmit()) {
+          e.preventDefault();
+          return false;
+        }
+      });
+    }
+    
+    // Attacher les événements de conditions générales
+    const termsCheckbox = document.getElementById('terms_accepted');
+    if (termsCheckbox) {
+      termsCheckbox.addEventListener('change', updateFormValidation);
+    }
   });
   
-  console.log('✅ Module signature électronique chargé avec succès');
+  console.log('✅ Module signature électronique et physique chargé avec succès');
   
 })();
-
-// =====================================================
-// 📋 GUIDE D'UTILISATION
-// =====================================================
-
-/*
-
-🔐 SIGNATURE-VALIDATION.JS - GUIDE D'UTILISATION
-
-1. CHARGEMENT :
-   <script src="../assets/js/signature-validation.js" defer></script>
-
-2. INITIALISATION :
-   await initializeDigitalSignature(); // Dans showStep(4)
-
-3. VALIDATION :
-   const isValid = validateDigitalSignature(); // Avant soumission
-
-4. DEBUG :
-   debugSignatureState(); // Voir l'état complet
-   testSignatureValidation(); // Tester la validation
-
-5. CONFIGURATION :
-   window.SIGNATURE_CONFIG.debugMode = true; // Mode debug
-   window.SIGNATURE_CONFIG.minPasswordLength = 8; // Longueur mot de passe
-
-6. ÉVÉNEMENTS :
-   Le script attache automatiquement les événements de validation temps réel
-
-7. SÉCURITÉ :
-   - Hash de validation avec crypto.subtle si disponible
-   - Validation côté client + serveur recommandée
-   - IP récupérée avec fallback
-
-*/
