@@ -348,6 +348,98 @@
           </div>
         </div>
         
+        <!-- NOUVELLE SECTION SIGNATURE -->
+        <div class="signature-validation-section" style="margin-top: 30px;">
+          <div class="section-title">🔐 VALIDATION ÉLECTRONIQUE DE COMMANDE</div>
+          
+          <!-- Récapitulatif verrouillé -->
+          <div class="locked-summary">
+            <h4>📋 Récapitulatif de votre commande :</h4>
+            <div class="locked-summary-content">
+              <div class="summary-line"><strong>Entreprise :</strong> <span id="locked-entreprise">-</span></div>
+              <div class="summary-line"><strong>Contact :</strong> <span id="locked-contact">-</span></div>
+              <div class="summary-line"><strong>Format :</strong> <span id="locked-format">-</span></div>
+              <div class="summary-line"><strong>Mois :</strong> <span id="locked-months">-</span></div>
+              <div class="summary-line"><strong>Mode paiement :</strong> <span id="locked-payment">-</span></div>
+              <div class="summary-line total-line"><strong>TOTAL :</strong> <span id="locked-total">-</span></div>
+            </div>
+          </div>
+          
+          <!-- Zone de validation -->
+          <div class="digital-signature-zone">
+            <div class="validation-header">
+              <h4>⚖️ Validation contractuelle</h4>
+              <p>En validant ci-dessous, vous confirmez votre commande et acceptez nos conditions générales.</p>
+            </div>
+            
+            <!-- Étape 1 : Checkbox détaillée -->
+            <div class="validation-step">
+              <label class="signature-checkbox">
+                <input type="checkbox" id="contractual_agreement" name="contractual_agreement" required>
+                <span class="checkmark"></span>
+                <div class="agreement-text">
+                  Je, <strong><span id="agreement-contact-name">[Contact]</span></strong>, 
+                  agissant en qualité de représentant légal de <strong><span id="agreement-company-name">[Entreprise]</span></strong>, 
+                  confirme par la présente la commande d'un encart publicitaire dans le calendrier 2026 des Sapeurs-Pompiers 
+                  de Clermont-l'Hérault pour un montant total de <strong><span id="agreement-total">[Total]</span>€</strong> 
+                  et accepte les conditions générales de vente.
+                </div>
+              </label>
+              <div class="error-message" id="agreement-error">Vous devez accepter les conditions pour continuer</div>
+            </div>
+            
+            <!-- Étape 2 : Saisie nom pour confirmation -->
+            <div class="validation-step">
+              <label for="signature_name">✍️ Confirmez en tapant votre nom complet :</label>
+              <input type="text" id="signature_name" name="signature_name" 
+                     placeholder="Tapez exactement votre nom et prénom" 
+                     class="signature-input" required>
+              <div class="input-help">Ce champ doit correspondre exactement au nom du contact principal</div>
+              <div class="error-message" id="signature-name-error">Le nom saisi ne correspond pas au contact principal</div>
+            </div>
+            
+            <!-- Étape 3 : Confirmation par mot de passe -->
+            <div class="validation-step">
+              <label for="signature_password">🔑 Mot de passe de confirmation :</label>
+              <input type="password" id="signature_password" name="signature_password" 
+                     placeholder="Créez un mot de passe pour cette commande (min. 6 caractères)" 
+                     class="signature-input" minlength="6" required>
+              <div class="input-help">Ce mot de passe servira à confirmer votre identité si nécessaire</div>
+              <div class="error-message" id="password-error">Le mot de passe doit contenir au moins 6 caractères</div>
+            </div>
+            
+            <!-- Informations de traçabilité -->
+            <div class="traceability-info">
+              <h5>📊 Informations de traçabilité :</h5>
+              <div class="trace-grid">
+                <div class="trace-item">
+                  <span class="trace-label">🕒 Date/Heure :</span>
+                  <span class="trace-value" id="trace-timestamp">-</span>
+                </div>
+                <div class="trace-item">
+                  <span class="trace-label">🌐 Adresse IP :</span>
+                  <span class="trace-value" id="trace-ip">-</span>
+                </div>
+                <div class="trace-item">
+                  <span class="trace-label">🔑 ID Validation :</span>
+                  <span class="trace-value" id="trace-validation-id">-</span>
+                </div>
+              </div>
+              <p class="trace-note">
+                Ces informations constituent une preuve de l'authenticité de votre validation électronique, 
+                conformément aux articles 1365 et suivants du Code Civil français.
+              </p>
+            </div>
+          </div>
+          
+          <!-- Champs cachés pour la validation -->
+          <input type="hidden" id="validation_timestamp" name="validation_timestamp">
+          <input type="hidden" id="validation_id" name="validation_id">
+          <input type="hidden" id="validation_hash" name="validation_hash">
+          <input type="hidden" id="user_ip" name="user_ip">
+          <input type="hidden" id="user_agent" name="user_agent">
+        </div>
+        
         <div class="navigation-buttons">
           <button type="button" class="submit-btn secondary" id="prev-step-4">RETOUR</button>
           <button type="submit" class="submit-btn">CONFIRMER MA COMMANDE</button>
@@ -404,6 +496,7 @@
   </div>
   
   <script src="../assets/js/main.js" defer></script>
+  <script src="../assets/js/signature-validation.js" defer></script>
   <script src="../assets/js/enterprise-form.js" defer></script>
   <script src="../assets/js/prefillform-enterprise.js" defer></script>
 </body>

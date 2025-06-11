@@ -4,49 +4,26 @@ function setupFormSubmission() {
   const form = document.getElementById('enterprise-form');
   if (!form) return;
   
-  // ✅ VARIABLE POUR EMPÊCHER DOUBLE SOUMISSION
   let isSubmitting = false;
-  
-  // 💰 FONCTION DE CALCUL DU PRIX TOTAL
-  function calculateTotalPrice() {
-    // Vérifier que nous avons les données nécessaires
-    if (!window.selectedFormat || !window.formatPrice) {
-      console.warn('⚠️ Données manquantes pour le calcul du prix:', { 
-        selectedFormat: window.selectedFormat, 
-        formatPrice: window.formatPrice 
-      });
-      return 0;
-    }
-    
-    let total = 0;
-    
-    if (window.isAnnualOffer) {
-      // Pour l'offre annuelle, le prix est forfaitaire
-      total = window.formatPrice; // 1800€ pour 12PARUTIONS
-      console.log('💰 Calcul offre annuelle:', total + '€');
-    } else {
-      // Pour les autres formats, multiplier par le nombre de mois
-      const nombreMois = window.selectedMonths?.length || 1;
-      total = window.formatPrice * nombreMois;
-      console.log('💰 Calcul standard:', `${window.formatPrice}€ x ${nombreMois} mois = ${total}€`);
-    }
-    
-    return total;
-  }
   
   form.addEventListener('submit', function(e) {
     e.preventDefault();
-    e.stopPropagation(); // ✅ Empêcher propagation
+    e.stopPropagation();
     
-    // ✅ PROTECTION CONTRE DOUBLE SOUMISSION
     if (isSubmitting) {
       console.log('⚠️ Soumission déjà en cours, ignorée');
       return;
     }
     
-    console.log('📤 Début soumission formulaire');
+    // ✅ AJOUT : Validation signature avant soumission
+    if (window.currentStep === 4 && !window.validateDigitalSignature()) {
+      console.log('❌ Validation signature échouée');
+      return;
+    }
     
-    // Validation finale
+    console.log('📤 Début soumission formulaire avec signature');
+    
+    // Validation finale existante...
     if (!window.selectedPayment) {
       const errorEl = document.getElementById('payment-error');
       if (errorEl) errorEl.style.display = 'block';
@@ -60,27 +37,18 @@ function setupFormSubmission() {
       return;
     }
     
-    // ✅ MARQUER COMME EN COURS
     isSubmitting = true;
     
-    // Désactiver le bouton et TOUS les boutons du formulaire
-    const submitButton = document.querySelector('button[type="submit"]');
+    // Désactiver tous les boutons
     const allButtons = document.querySelectorAll('button');
-    
     allButtons.forEach(btn => btn.disabled = true);
     
+    const submitButton = document.querySelector('button[type="submit"]');
     if (submitButton) {
-      submitButton.innerHTML = '<span class="loading"></span> Traitement en cours...';
+      submitButton.innerHTML = '<span class="loading"></span> Finalisation signature...';
     }
     
-    // ✅ DÉSACTIVER LE FORMULAIRE COMPLET
-    const formInputs = form.querySelectorAll('input, select, textarea, button');
-    formInputs.forEach(input => input.disabled = true);
-    
-    // 💰 CALCULER LE PRIX TOTAL
-    const calculatedTotal = calculateTotalPrice();
-    
-    // Construction du payload
+    // ✅ AJOUT : Inclure les données de signature dans le payload
     const payload = {
       form_name: "enterprise-form",
       source: "formulaire_web_direct",
@@ -106,35 +74,50 @@ function setupFormSubmission() {
       // Paiement
       selected_payment: window.selectedPayment,
       payment_details: document.querySelector('.payment-card.selected')?.getAttribute('data-details') || '',
-      rdv_preference: document.getElementById('rdv_preference')?.value || '',
-      
-      // ✅ PRIX TOTAL CALCULÉ CORRECTEMENT
-      prixTotal: calculatedTotal,
-      
+      rdv_preference: document.getElementById('rdv_preference')?.value || '',      
+          
+      // ✅ NOUVEAUX CHAMPS : Données de signature électronique
+      contractual_agreement: document.getElementById('contractual_agreement')?.checked || false,
+      signature_name: document.getElementById('signature_name')?.value || '',
+      signature_password: document.getElementById('signature_password')?.value || '',
+      validation_timestamp: document.getElementById('validation_timestamp')?.value || '',
+      validation_id: document.getElementById('validation_id')?.value || '',
+      validation_hash: document.getElementById('validation_hash')?.value || '',
+      user_ip: document.getElementById('user_ip')?.value || '',
+      user_agent: document.getElementById('user_agent')?.value || navigator.userAgent,
+      prixTotal: (() => {
+        if (!window.selectedFormat || !window.formatPrice) return 0;
+        if (window.isAnnualOffer) return window.formatPrice;
+        return window.formatPrice * (window.selectedMonths?.length || 1);
+      })(),
+
       // Métadonnées
       orderNumber: 'CMD-2026-' + Math.floor(100000 + Math.random() * 900000),
       commentaires: document.getElementById('commentaires').value || '',
       terms_accepted: termsAccepted,
-      
-      // ID entreprise depuis URL
       entrepriseId: getEnterpriseIdFromURL(),
+      user_agent: navigator.userAgent,
       
-      // Tracking
-      user_agent: navigator.userAgent,      
+      // ✅ NOUVEAU : Marquer comme signé électroniquement
+      is_electronically_signed: true,
+      signature_method: 'Validation électronique renforcée'
     };
     
-    console.log('📤 Envoi payload JSON vers Gateway:', payload);
-    console.log('💰 Prix total calculé:', calculatedTotal + '€');
+    console.log('📤 Envoi payload avec signature:', {
+      validation_id: payload.validation_id,
+      signature_name: payload.signature_name,
+      is_signed: payload.is_electronically_signed
+    });
     
-    // ✅ ENVOI AVEC TIMEOUT ET ABORT CONTROLLER
+    // Envoi vers le gateway (code existant)
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
+    const timeoutId = setTimeout(() => controller.abort(), 30000);
     
     fetch('https://n8n.dsolution-ia.fr/webhook/gateway-calendrier', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'X-Form-Source': 'enterprise-form'
+        'X-Form-Source': 'enterprise-form-signed'
       },
       body: JSON.stringify(payload),
       signal: controller.signal
@@ -148,19 +131,16 @@ function setupFormSubmission() {
       throw new Error(`Erreur serveur: ${response.status} - ${response.statusText}`);
     })
     .then(data => {
-      console.log('✅ Réponse Gateway:', data);
-      console.log('✅ Soumission réussie, affichage confirmation');
-      
-      // ✅ SUCCÈS - NE PAS RÉACTIVER LE FORMULAIRE
+      console.log('✅ Réponse Gateway avec signature:', data);
       showConfirmation(payload, data);
     })
     .catch(error => {
       console.error('❌ Erreur lors de l\'envoi:', error);
       
-      // ✅ ERREUR - RÉACTIVER UNIQUEMENT EN CAS D'ÉCHEC
       isSubmitting = false;
       
       // Réactiver le formulaire
+      const formInputs = form.querySelectorAll('input, select, textarea, button');
       formInputs.forEach(input => input.disabled = false);
       
       if (submitButton) {
@@ -171,15 +151,6 @@ function setupFormSubmission() {
       alert('Une erreur est survenue lors de l\'envoi du formulaire. Veuillez réessayer.');
     });
   });
-  
-  // ✅ EMPÊCHER SOUMISSION PAR ENTER KEY (protection supplémentaire)
-  form.addEventListener('keydown', function(e) {
-    if (e.key === 'Enter' && isSubmitting) {
-      e.preventDefault();
-      e.stopPropagation();
-      console.log('⚠️ Enter bloqué pendant soumission');
-    }
-  });
 }
 
 // 🆔 FONCTION UTILITAIRE pour récupérer l'ID entreprise depuis l'URL
@@ -188,9 +159,9 @@ function getEnterpriseIdFromURL() {
   return urlParams.get('id') || urlParams.get('eid') || null;
 }
 
-// ✅ MODIFICATION DE showConfirmation pour ne PAS réactiver le formulaire
+// ✅ MODIFICATION 2 : Mettre à jour showConfirmation pour inclure les infos de signature
 function showConfirmation(formData, gatewayResponse) {
-  console.log('📋 Affichage confirmation finale');
+  console.log('📋 Affichage confirmation avec signature');
   
   // Mettre à jour la confirmation avec les données
   const elements = {
@@ -217,6 +188,42 @@ function showConfirmation(formData, gatewayResponse) {
     confirmationPayment.textContent = paymentLabels[formData.selected_payment] || formData.selected_payment;
   }
   
+  // ✅ AJOUT : Message de signature dans la confirmation
+  const confirmationDiv = document.getElementById('confirmation');
+  if (confirmationDiv && formData.is_electronically_signed) {
+    // Ajouter une section signature dans la confirmation
+    const signatureConfirmation = document.createElement('div');
+    signatureConfirmation.className = 'signature-confirmation';
+    signatureConfirmation.style.cssText = `
+      background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+      border: 2px solid #28a745;
+      border-radius: 10px;
+      padding: 20px;
+      margin: 20px 0;
+      text-align: center;
+    `;
+    
+    signatureConfirmation.innerHTML = `
+      <h3 style="color: #155724; margin-top: 0;">🔐 Signature Électronique Confirmée</h3>
+      <p><strong>Signataire :</strong> ${formData.signature_name}</p>
+      <p><strong>ID de validation :</strong> <code>${formData.validation_id}</code></p>
+      <p style="font-size: 12px; color: #155724; margin-bottom: 0;">
+        Cette commande a été signée électroniquement et possède une valeur juridique.
+        <br><a href="https://formulaire.pompiers34800.com/verify/${formData.validation_id}" target="_blank" style="color: #155724;">
+          🔍 Vérifier cette signature
+        </a>
+      </p>
+    `;
+    
+    // Insérer après le récapitulatif
+    const summarySection = confirmationDiv.querySelector('.summary-section');
+    if (summarySection) {
+      summarySection.insertAdjacentElement('afterend', signatureConfirmation);
+    } else {
+      confirmationDiv.appendChild(signatureConfirmation);
+    }
+  }
+  
   // ✅ MASQUER DÉFINITIVEMENT LE FORMULAIRE
   document.querySelectorAll('.form-section').forEach(section => {
     section.classList.remove('active');
@@ -241,7 +248,7 @@ function showConfirmation(formData, gatewayResponse) {
     progressContainer.style.display = 'none';
   }
   
-  console.log('✅ Confirmation affichée, formulaire désactivé définitivement');
+  console.log('✅ Confirmation affichée avec signature, formulaire désactivé définitivement');
 }
 // Fix pour enterprise-form.js - Ajout à la fin du fichier enterprise-form.js existant
 
@@ -308,6 +315,15 @@ function showConfirmation(formData, gatewayResponse) {
         window.currentStep = step;
         window.updateProgressBar(step);
         window.scrollTo({ top: 0, behavior: 'smooth' });
+        
+        // ✅ AJOUT : Si on arrive à l'étape 4, initialiser la signature
+        if (step === 4) {
+          setTimeout(async () => {
+            if (typeof window.initializeDigitalSignature === 'function') {
+              await window.initializeDigitalSignature();
+            }
+          }, 500);
+        }
       }
     };
     
@@ -439,6 +455,11 @@ function showConfirmation(formData, gatewayResponse) {
     const prevStep4 = document.getElementById('prev-step-4');
     if (prevStep4) {
       prevStep4.onclick = () => window.showStep(3);
+    }
+    
+    // === GESTION VALIDATION ÉLECTRONIQUE ===
+    if (typeof window.setupSignatureValidation === 'function') {
+      window.setupSignatureValidation();
     }
     
     // === GESTION SÉLECTION FORMAT ===
@@ -640,3 +661,40 @@ function showConfirmation(formData, gatewayResponse) {
     }
   }
 })();
+
+// ✅ APPEL DE LA FONCTION DE SOUMISSION - À AJOUTER À LA FIN
+document.addEventListener('DOMContentLoaded', function() {
+  // Attendre que l'initialisation soit terminée
+  setTimeout(() => {
+    setupFormSubmission();
+    console.log("✅ setupFormSubmission() appelée");
+  }, 1500);
+});
+
+// ✅ MODIFICATION 4 : Assurer que les scripts de signature sont chargés
+document.addEventListener('DOMContentLoaded', function() {
+  // Vérifier que le script de signature est bien chargé
+  if (typeof window.initializeDigitalSignature !== 'function') {
+    console.warn('⚠️ Script de signature électronique non chargé');
+  } else {
+    console.log('✅ Intégration signature électronique chargée');
+  }
+});
+
+// ✅ NOUVELLE FONCTION : Debug pour tester la signature
+window.debugSignatureIntegration = function() {
+  console.log('🔍 Debug Intégration Signature:');
+  console.log('- Étape actuelle:', window.currentStep);
+  console.log('- Fonction signature disponible:', typeof window.initializeDigitalSignature);
+  console.log('- Éléments signature présents:', {
+    agreement: !!document.getElementById('contractual_agreement'),
+    name: !!document.getElementById('signature_name'),
+    password: !!document.getElementById('signature_password'),
+    validationId: !!document.getElementById('validation_id')
+  });
+  
+  // Tester la validation
+  if (window.currentStep === 4) {
+    console.log('- Test validation signature:', window.validateDigitalSignature());
+  }
+};

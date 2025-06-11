@@ -473,3 +473,303 @@ input[readonly] {
     right: 20px;
   }
 }
+
+/* STYLES POUR LA SECTION SIGNATURE ÉLECTRONIQUE */
+
+.signature-validation-section {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border: 2px solid var(--primary);
+  border-radius: 12px;
+  padding: 25px;
+  margin-top: 30px;
+  position: relative;
+}
+
+.signature-validation-section::before {
+  content: "🔒 SECTION SÉCURISÉE";
+  position: absolute;
+  top: -12px;
+  left: 20px;
+  background: var(--primary);
+  color: white;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+/* Récapitulatif verrouillé */
+.locked-summary {
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 25px;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.locked-summary h4 {
+  margin-top: 0;
+  color: var(--secondary);
+  border-bottom: 2px solid var(--accent);
+  padding-bottom: 10px;
+}
+
+.locked-summary-content {
+  margin-top: 15px;
+}
+
+.summary-line {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.summary-line:last-child {
+  border-bottom: none;
+}
+
+.total-line {
+  font-size: 18px;
+  font-weight: bold;
+  color: var(--primary);
+  border-top: 2px solid var(--primary);
+  margin-top: 10px;
+  padding-top: 15px;
+}
+
+/* Zone de signature digitale */
+.digital-signature-zone {
+  background: white;
+  border-radius: 8px;
+  padding: 20px;
+  border: 1px solid #ddd;
+}
+
+.validation-header {
+  text-align: center;
+  margin-bottom: 25px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid #eee;
+}
+
+.validation-header h4 {
+  color: var(--secondary);
+  margin-bottom: 10px;
+}
+
+.validation-header p {
+  color: #666;
+  font-style: italic;
+}
+
+/* Étapes de validation */
+.validation-step {
+  margin-bottom: 25px;
+  padding: 15px;
+  background: #f8f9fa;
+  border-radius: 6px;
+  border-left: 4px solid var(--accent);
+}
+
+/* Checkbox de signature */
+.signature-checkbox {
+  display: flex;
+  align-items: flex-start;
+  cursor: pointer;
+  position: relative;
+  padding-left: 35px;
+  line-height: 1.6;
+}
+
+.signature-checkbox input[type="checkbox"] {
+  position: absolute;
+  opacity: 0;
+  cursor: pointer;
+  height: 0;
+  width: 0;
+}
+
+.checkmark {
+  position: absolute;
+  top: 2px;
+  left: 0;
+  height: 20px;
+  width: 20px;
+  background-color: #eee;
+  border-radius: 4px;
+  border: 2px solid #ddd;
+  transition: all 0.3s;
+}
+
+.signature-checkbox:hover input ~ .checkmark {
+  background-color: #ccc;
+  border-color: var(--accent);
+}
+
+.signature-checkbox input:checked ~ .checkmark {
+  background-color: var(--primary);
+  border-color: var(--primary);
+}
+
+.checkmark:after {
+  content: "";
+  position: absolute;
+  display: none;
+}
+
+.signature-checkbox input:checked ~ .checkmark:after {
+  display: block;
+}
+
+.signature-checkbox .checkmark:after {
+  left: 6px;
+  top: 2px;
+  width: 6px;
+  height: 12px;
+  border: solid white;
+  border-width: 0 3px 3px 0;
+  transform: rotate(45deg);
+}
+
+.agreement-text {
+  font-size: 14px;
+  line-height: 1.6;
+  color: #333;
+}
+
+.agreement-text strong {
+  color: var(--primary);
+}
+
+/* Champs de saisie signature */
+.signature-input {
+  width: 100%;
+  padding: 12px 15px;
+  border: 2px solid #ddd;
+  border-radius: 6px;
+  font-size: 16px;
+  transition: all 0.3s;
+  margin-top: 8px;
+}
+
+.signature-input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(230, 57, 70, 0.1);
+  outline: none;
+}
+
+.signature-input.valid {
+  border-color: var(--success);
+  background-color: rgba(76, 175, 80, 0.05);
+}
+
+.signature-input.invalid {
+  border-color: var(--primary);
+  background-color: rgba(230, 57, 70, 0.05);
+}
+
+.input-help {
+  font-size: 12px;
+  color: #666;
+  margin-top: 5px;
+  font-style: italic;
+}
+
+/* Informations de traçabilité */
+.traceability-info {
+  background: linear-gradient(135deg, #e3f2fd 0%, #f1f8e9 100%);
+  border: 1px solid #81c784;
+  border-radius: 8px;
+  padding: 20px;
+  margin-top: 25px;
+}
+
+.traceability-info h5 {
+  margin-top: 0;
+  color: var(--secondary);
+  border-bottom: 1px solid #81c784;
+  padding-bottom: 8px;
+}
+
+.trace-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 15px;
+  margin: 15px 0;
+}
+
+.trace-item {
+  background: white;
+  padding: 10px 15px;
+  border-radius: 6px;
+  border: 1px solid #c8e6c9;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.trace-label {
+  font-weight: bold;
+  color: #2e7d32;
+  font-size: 14px;
+}
+
+.trace-value {
+  font-family: 'Courier New', monospace;
+  background: #f1f8e9;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 13px;
+  color: #1b5e20;
+}
+
+.trace-note {
+  font-size: 12px;
+  color: #2e7d32;
+  font-style: italic;
+  margin-top: 15px;
+  text-align: center;
+  line-height: 1.5;
+}
+
+/* Animations */
+@keyframes signatureSuccess {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
+.signature-validation-section.validated {
+  animation: signatureSuccess 0.6s ease-in-out;
+  border-color: var(--success);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .signature-validation-section {
+    padding: 20px 15px;
+  }
+  
+  .trace-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  
+  .trace-item {
+    flex-direction: column;
+    text-align: center;
+    gap: 5px;
+  }
+  
+  .summary-line {
+    flex-direction: column;
+    text-align: left;
+    gap: 5px;
+  }
+  
+  .signature-input {
+    font-size: 16px; /* Évite le zoom sur iOS */
+  }
+}
