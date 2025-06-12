@@ -3,81 +3,117 @@
 function setupFormSubmission() {
   const form = document.getElementById('enterprise-form');
   if (!form) return;
-
+  
+  // ✅ PROTECTION 1 : Variable globale de verrouillage
+  if (window.formSubmissionInProgress) {
+    console.log('⚠️ setupFormSubmission déjà configurée, ignorée');
+    return;
+  }
+  window.formSubmissionInProgress = false;
+  
+  // ✅ PROTECTION 2 : Retirer tous les anciens listeners
+  const newForm = form.cloneNode(true);
+  form.parentNode.replaceChild(newForm, form);
+  
   let isSubmitting = false;
-
-  form.addEventListener('submit', function (e) {
+  let submitButton = null;
+  
+  newForm.addEventListener('submit', function(e) {
     e.preventDefault();
-    e.stopPropagation();
-
+    e.stopImmediatePropagation(); // ✅ PROTECTION 3 : Arrêt immédiat
+    
+    console.log('📤 Tentative soumission, isSubmitting:', isSubmitting);
+    
+    // ✅ PROTECTION 4 : Vérification double soumission
     if (isSubmitting) {
-      console.log('⚠️ Soumission déjà en cours, ignorée');
-      return;
+      console.log('❌ Soumission déjà en cours, BLOQUÉE');
+      return false;
     }
-
-    // ✅ AJOUT : Validation signature avant soumission
+    
+    if (window.formSubmissionInProgress) {
+      console.log('❌ Soumission globale en cours, BLOQUÉE');
+      return false;
+    }
+    
+    // ✅ PROTECTION 5 : Validation signature avant soumission
     if (window.currentStep === 4 && !window.validateDigitalSignature()) {
       console.log('❌ Validation signature échouée');
-      return;
+      isSubmitting = false;
+      return false;
     }
-
-    console.log('📤 Début soumission formulaire avec signature');
-
-    // Validation finale existante...
+    
+    console.log('✅ Début soumission formulaire UNIQUE');
+    
+    // ✅ VERROUILLAGE IMMÉDIAT
+    isSubmitting = true;
+    window.formSubmissionInProgress = true;
+    
+    // ✅ PROTECTION 6 : Désactiver IMMÉDIATEMENT tous les boutons
+    submitButton = document.querySelector('button[type="submit"]');
+    const allButtons = document.querySelectorAll('button');
+    allButtons.forEach(btn => {
+      btn.disabled = true;
+      btn.style.pointerEvents = 'none';
+      btn.style.opacity = '0.6';
+    });
+    
+    // ✅ PROTECTION 7 : Désactiver le formulaire entier
+    const allInputs = newForm.querySelectorAll('input, select, textarea');
+    allInputs.forEach(input => input.disabled = true);
+    
+    // ✅ PROTECTION 8 : Indicateur visuel
+    if (submitButton) {
+      submitButton.innerHTML = '<span class="loading"></span> 🔒 Traitement en cours...';
+      submitButton.style.cursor = 'not-allowed';
+    }
+    
+    // ✅ PROTECTION 9 : Validation finale des champs requis
     if (!window.selectedPayment) {
       const errorEl = document.getElementById('payment-error');
       if (errorEl) errorEl.style.display = 'block';
-      return;
+      resetSubmissionState();
+      return false;
     }
-
-    const termsAccepted = document.getElementById('terms_accepted').checked;
+    
+    const termsAccepted = document.getElementById('terms_accepted')?.checked;
     if (!termsAccepted) {
       const errorEl = document.getElementById('terms-error');
       if (errorEl) errorEl.style.display = 'block';
-      return;
+      resetSubmissionState();
+      return false;
     }
-
-    isSubmitting = true;
-
-    // Désactiver tous les boutons
-    const allButtons = document.querySelectorAll('button');
-    allButtons.forEach(btn => btn.disabled = true);
-
-    const submitButton = document.querySelector('button[type="submit"]');
-    if (submitButton) {
-      submitButton.innerHTML = '<span class="loading"></span> Finalisation signature...';
-    }
-
-    // ✅ AJOUT : Inclure les données de signature dans le payload
-    // Version sécurisée pour TOUS les champs optionnels :
+    
+    // ✅ CONSTRUCTION PAYLOAD SÉCURISÉE
     const payload = {
       form_name: "enterprise-form",
       source: "formulaire_web_direct",
       timestamp: new Date().toISOString(),
       page_url: window.location.href,
-
-      // Informations entreprise
+      submission_id: `SUB_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`, // ✅ ID unique
+      
+      // Informations entreprise (sécurisées avec ?.)
       entreprise_name: document.getElementById('entreprise_name')?.value || '',
       adresse: document.getElementById('adresse')?.value || '',
       contact_name: document.getElementById('contact_name')?.value || '',
       email: document.getElementById('email')?.value || '',
       telephone: document.getElementById('telephone')?.value || '',
-
+      
       // Format et prix
       selected_format: window.selectedFormat || '',
       format_price: window.formatPrice || 0,
-
+      
       // Mois sélectionnés
       selected_months: window.selectedMonths ? window.selectedMonths.join(',') : '',
       nombre_parutions: window.isAnnualOffer ? 12 : (window.selectedMonths?.length || 1),
       is_annual_offer: window.isAnnualOffer || false,
-
+      
       // Paiement
       selected_payment: window.selectedPayment || '',
       payment_details: document.querySelector('.payment-card.selected')?.getAttribute('data-details') || '',
       rdv_preference: document.getElementById('rdv_preference')?.value || '',
-
-      // 🔧 CORRECTION : Données de signature électronique (sécurisées)
+      
+      // Signature électronique (toutes sécurisées)
+      signature_method: document.querySelector('input[name="signature_method"]:checked')?.value || 'electronic',
       contractual_agreement: document.getElementById('contractual_agreement')?.checked || false,
       signature_name: document.getElementById('signature_name')?.value || '',
       signature_password: document.getElementById('signature_password')?.value || '',
@@ -86,87 +122,118 @@ function setupFormSubmission() {
       validation_hash: document.getElementById('validation_hash')?.value || '',
       user_ip: document.getElementById('user_ip')?.value || '',
       user_agent: document.getElementById('user_agent')?.value || navigator.userAgent,
-
-      // Prix total calculé
+      
+      // Calculs
       prixTotal: (() => {
         if (!window.selectedFormat || !window.formatPrice) return 0;
         if (window.isAnnualOffer) return window.formatPrice;
         return window.formatPrice * (window.selectedMonths?.length || 1);
       })(),
-
+      
       // Métadonnées
       orderNumber: 'CMD-2026-' + Math.floor(100000 + Math.random() * 900000),
-
-      // 🔧 CORRECTION : Commentaires sécurisé
       commentaires: document.getElementById('commentaires')?.value || '',
-
-      terms_accepted: document.getElementById('terms_accepted')?.checked || false,
+      terms_accepted: termsAccepted,
       entrepriseId: getEnterpriseIdFromURL(),
-
-      // Signature method
-      signature_method: document.querySelector('input[name="signature_method"]:checked')?.value || 'electronic',
-
-      // 🔧 CORRECTION : Marquer comme signé électroniquement
-      is_electronically_signed: (document.querySelector('input[name="signature_method"]:checked')?.value === 'electronic') &&
-        (document.getElementById('contractual_agreement')?.checked || false)
+      
+      // Signature status
+      is_electronically_signed: (document.querySelector('input[name="signature_method"]:checked')?.value === 'electronic') && 
+                                (document.getElementById('contractual_agreement')?.checked || false)
     };
-
-    // Test des champs requis
-    console.log('Validation avant envoi:', {
-      signature_method: document.querySelector('input[name="signature_method"]:checked')?.value,
-      terms_accepted: document.getElementById('terms_accepted')?.checked,
-      contractual_agreement: document.getElementById('contractual_agreement')?.checked
+    
+    console.log('📤 Payload unique préparé:', {
+      submission_id: payload.submission_id,
+      entreprise: payload.entreprise_name,
+      timestamp: payload.timestamp
     });
-
-    console.log('📤 Envoi payload avec signature:', {
-      validation_id: payload.validation_id,
-      signature_name: payload.signature_name,
-      is_signed: payload.is_electronically_signed
-    });
-
-    // Envoi vers le gateway (code existant)
+    
+    // ✅ ENVOI AVEC TIMEOUT ET RETRY
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 30000);
-
+    
     fetch('https://n8n.dsolution-ia.fr/webhook/gateway-calendrier', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'X-Form-Source': 'enterprise-form-signed'
+        'X-Form-Source': 'enterprise-form-unique',
+        'X-Submission-ID': payload.submission_id // ✅ Header unique
       },
       body: JSON.stringify(payload),
       signal: controller.signal
     })
-      .then(response => {
-        clearTimeout(timeoutId);
-
-        if (response.ok) {
-          return response.json();
-        }
-        throw new Error(`Erreur serveur: ${response.status} - ${response.statusText}`);
-      })
-      .then(data => {
-        console.log('✅ Réponse Gateway avec signature:', data);
-        showConfirmation(payload, data);
-      })
-      .catch(error => {
-        console.error('❌ Erreur lors de l\'envoi:', error);
-
-        isSubmitting = false;
-
-        // Réactiver le formulaire
-        const formInputs = form.querySelectorAll('input, select, textarea, button');
-        formInputs.forEach(input => input.disabled = false);
-
-        if (submitButton) {
-          submitButton.disabled = false;
-          submitButton.innerHTML = 'CONFIRMER MA COMMANDE';
-        }
-
-        alert('Une erreur est survenue lors de l\'envoi du formulaire. Veuillez réessayer.');
-      });
+    .then(response => {
+      clearTimeout(timeoutId);
+      console.log('📡 Réponse reçue:', response.status);
+      
+      if (response.ok) {
+        return response.json();
+      }
+      throw new Error(`Erreur serveur: ${response.status} - ${response.statusText}`);
+    })
+    .then(data => {
+      console.log('✅ Succès soumission unique:', data);
+      showConfirmation(payload, data);
+      
+      // ✅ NE PAS réactiver le formulaire après succès
+      
+    })
+    .catch(error => {
+      console.error('❌ Erreur soumission:', error);
+      resetSubmissionState();
+      alert('Une erreur est survenue. Veuillez réessayer.');
+    });
   });
+  
+  // ✅ FONCTION DE RESET EN CAS D'ERREUR SEULEMENT
+  function resetSubmissionState() {
+    console.log('🔄 Reset état soumission (erreur uniquement)');
+    isSubmitting = false;
+    window.formSubmissionInProgress = false;
+    
+    const allButtons = document.querySelectorAll('button');
+    const allInputs = document.querySelectorAll('input, select, textarea');
+    
+    allButtons.forEach(btn => {
+      btn.disabled = false;
+      btn.style.pointerEvents = '';
+      btn.style.opacity = '';
+    });
+    
+    allInputs.forEach(input => input.disabled = false);
+    
+    if (submitButton) {
+      submitButton.innerHTML = 'CONFIRMER MA COMMANDE';
+      submitButton.style.cursor = '';
+    }
+  }
+  
+  console.log('✅ setupFormSubmission configurée avec protection double soumission');
 }
+
+// ✅ PROTECTION GLOBALE : Empêcher multiple appels
+(function() {
+  let setupCalled = false;
+  const originalSetup = window.setupFormSubmission;
+  
+  window.setupFormSubmission = function() {
+    if (setupCalled) {
+      console.log('⚠️ setupFormSubmission déjà appelée, ignorée');
+      return;
+    }
+    setupCalled = true;
+    return originalSetup ? originalSetup() : setupFormSubmission();
+  };
+})();
+
+// ✅ DEBUG POUR DETECTER DOUBLES LISTENERS
+window.debugFormListeners = function() {
+  const form = document.getElementById('enterprise-form');
+  if (form) {
+    console.log('🔍 Formulaire trouvé');
+    console.log('- Listeners submit:', form.getEventListeners ? form.getEventListeners('submit') : 'Non détectable');
+    console.log('- formSubmissionInProgress:', window.formSubmissionInProgress);
+  }
+};
 
 // 🆔 FONCTION UTILITAIRE pour récupérer l'ID entreprise depuis l'URL
 function getEnterpriseIdFromURL() {
