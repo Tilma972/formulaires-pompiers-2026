@@ -1306,3 +1306,282 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 
 console.log('💳 Module gestion paiement chargé. Utilisez debugPaymentSelection() pour debug.');
+
+// 🔄 CORRECTION : MISE À JOUR TEMPS RÉEL DES RÉCAPITULATIFS PAIEMENT
+// À ajouter dans enterprise-form.js APRÈS le code du mode de paiement
+
+// =====================================================
+// 🔧 AMÉLIORATION : Mise à jour immédiate des récapitulatifs
+// =====================================================
+
+// Redéfinir selectPaymentMethod pour mise à jour temps réel
+function selectPaymentMethod(selectedCard) {
+  // === CODE EXISTANT (ne pas changer) ===
+  
+  // Désélectionner toutes les cartes
+  document.querySelectorAll('.payment-card').forEach(card => {
+    card.classList.remove('selected');
+  });
+  
+  // Sélectionner la carte cliquée
+  selectedCard.classList.add('selected');
+  
+  // Récupérer les informations
+  const paymentMethod = selectedCard.getAttribute('data-payment');
+  const paymentDetails = selectedCard.getAttribute('data-details');
+  
+  // Stocker les informations
+  window.selectedPayment = paymentMethod;
+  
+  // Mettre à jour les champs cachés
+  const selectedPaymentInput = document.getElementById('selected_payment');
+  const paymentDetailsInput = document.getElementById('payment_details');
+  
+  if (selectedPaymentInput) selectedPaymentInput.value = paymentMethod;
+  if (paymentDetailsInput) paymentDetailsInput.value = paymentDetails || '';
+  
+  // Masquer toutes les sections de détails
+  document.querySelectorAll('.payment-details').forEach(detail => {
+    detail.style.display = 'none';
+  });
+  
+  // Afficher la section correspondante
+  if (paymentDetails) {
+    const detailSection = document.getElementById(paymentDetails + '-details');
+    if (detailSection) {
+      detailSection.style.display = 'block';
+      
+      // Animation d'apparition
+      detailSection.style.opacity = '0';
+      detailSection.style.transform = 'translateY(-10px)';
+      
+      setTimeout(() => {
+        detailSection.style.transition = 'all 0.3s ease';
+        detailSection.style.opacity = '1';
+        detailSection.style.transform = 'translateY(0)';
+      }, 50);
+    }
+  }
+  
+  // Masquer l'erreur de paiement
+  const paymentError = document.getElementById('payment-error');
+  if (paymentError) paymentError.style.display = 'none';
+  
+  // === 🆕 AJOUT : MISE À JOUR IMMÉDIATE DES DEUX RÉCAPITULATIFS ===
+  
+  updateBothSummariesWithPayment(paymentMethod);
+  
+  // Log pour debug
+  console.log('💳 Mode de paiement sélectionné et récapitulatifs mis à jour:', {
+    method: paymentMethod,
+    details: paymentDetails,
+    globalVar: window.selectedPayment
+  });
+}
+
+// =====================================================
+// 🆕 NOUVELLE FONCTION : Mise à jour des deux récapitulatifs
+// =====================================================
+
+function updateBothSummariesWithPayment(paymentMethod) {
+  console.log('🔄 Mise à jour temps réel des récapitulatifs avec paiement:', paymentMethod);
+  
+  // Obtenir le libellé formaté du mode de paiement
+  const paymentLabel = getPaymentLabelDetailed(paymentMethod);
+  
+  // === 1. RÉCAPITULATIF STANDARD (summary-*) ===
+  const summaryPayment = document.getElementById('summary-payment');
+  if (summaryPayment) {
+    summaryPayment.textContent = paymentLabel;
+    
+    // Animation de mise à jour
+    summaryPayment.style.transition = 'all 0.3s ease';
+    summaryPayment.style.backgroundColor = '#e8f5e8';
+    summaryPayment.style.transform = 'scale(1.05)';
+    
+    setTimeout(() => {
+      summaryPayment.style.backgroundColor = '';
+      summaryPayment.style.transform = 'scale(1)';
+    }, 600);
+    
+    console.log('✅ Récapitulatif standard mis à jour:', paymentLabel);
+  } else {
+    console.warn('⚠️ Élément summary-payment non trouvé');
+  }
+  
+  // === 2. RÉCAPITULATIF SÉCURISÉ (locked-*) ===
+  const lockedPayment = document.getElementById('locked-payment');
+  if (lockedPayment) {
+    lockedPayment.textContent = paymentLabel;
+    
+    // Animation de mise à jour
+    lockedPayment.style.transition = 'all 0.3s ease';
+    lockedPayment.style.backgroundColor = '#e8f5e8';
+    lockedPayment.style.transform = 'scale(1.05)';
+    
+    setTimeout(() => {
+      lockedPayment.style.backgroundColor = '';
+      lockedPayment.style.transform = 'scale(1)';
+    }, 600);
+    
+    console.log('✅ Récapitulatif sécurisé mis à jour:', paymentLabel);
+  } else {
+    console.warn('⚠️ Élément locked-payment non trouvé');
+  }
+  
+  // === 3. VÉRIFICATION VISUELLE ===
+  
+  // Ajouter un indicateur temporaire de mise à jour
+  showPaymentUpdateIndicator(paymentLabel);
+}
+
+// =====================================================
+// 🎨 INDICATEUR VISUEL DE MISE À JOUR
+// =====================================================
+
+function showPaymentUpdateIndicator(paymentLabel) {
+  // Créer un indicateur temporaire
+  const indicator = document.createElement('div');
+  indicator.style.cssText = `
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: linear-gradient(135deg, #28a745, #20c997);
+    color: white;
+    padding: 12px 20px;
+    border-radius: 25px;
+    font-size: 14px;
+    font-weight: bold;
+    box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+    z-index: 10000;
+    transform: translateX(300px);
+    transition: all 0.3s ease;
+  `;
+  
+  indicator.innerHTML = `💳 ${paymentLabel} sélectionné`;
+  
+  document.body.appendChild(indicator);
+  
+  // Animation d'entrée
+  setTimeout(() => {
+    indicator.style.transform = 'translateX(0)';
+  }, 100);
+  
+  // Animation de sortie et suppression
+  setTimeout(() => {
+    indicator.style.transform = 'translateX(300px)';
+    indicator.style.opacity = '0';
+    
+    setTimeout(() => {
+      document.body.removeChild(indicator);
+    }, 300);
+  }, 2000);
+}
+
+// =====================================================
+// 🔧 AMÉLIORATION : updateRdvDetails avec mise à jour récapitulatifs
+// =====================================================
+
+function updateRdvDetails(rdvType) {
+  const paymentDetailsInput = document.getElementById('payment_details');
+  if (paymentDetailsInput) {
+    // Enrichir les détails avec la préférence RDV
+    const baseDetails = paymentDetailsInput.value || 'cheque_remise';
+    paymentDetailsInput.value = `${baseDetails}_${rdvType}`;
+  }
+  
+  // 🆕 MISE À JOUR : Mettre à jour les récapitulatifs quand RDV change
+  if (window.selectedPayment) {
+    updateBothSummariesWithPayment(window.selectedPayment);
+  }
+  
+  console.log('🤝 Préférence RDV mise à jour avec récapitulatifs:', rdvType);
+}
+
+// =====================================================
+// 🧪 FONCTION DE TEST AMÉLIORÉE
+// =====================================================
+
+window.testPaymentUpdateRealTime = function() {
+  console.log('🧪 Test mise à jour temps réel des récapitulatifs');
+  
+  const paymentMethods = ['Virement', 'Cheque_Remise', 'Cheque_Poste', 'Cheque_Caserne'];
+  let currentIndex = 0;
+  
+  const testSequence = () => {
+    if (currentIndex < paymentMethods.length) {
+      const method = paymentMethods[currentIndex];
+      console.log(`🔄 Test ${currentIndex + 1}/4: ${method}`);
+      
+      testPaymentSelection(method);
+      
+      // Vérifier que les récapitulatifs ont été mis à jour
+      setTimeout(() => {
+        const summaryValue = document.getElementById('summary-payment')?.textContent;
+        const lockedValue = document.getElementById('locked-payment')?.textContent;
+        
+        console.log(`  - Récapitulatif standard: "${summaryValue}"`);
+        console.log(`  - Récapitulatif sécurisé: "${lockedValue}"`);
+        
+        if (summaryValue === lockedValue && summaryValue !== '-' && summaryValue !== 'À définir') {
+          console.log(`  ✅ ${method} - Récapitulatifs synchronisés`);
+        } else {
+          console.log(`  ❌ ${method} - Problème de synchronisation`);
+        }
+        
+        currentIndex++;
+        setTimeout(testSequence, 1500);
+      }, 500);
+    } else {
+      console.log('✅ Test complet terminé');
+    }
+  };
+  
+  testSequence();
+};
+
+// =====================================================
+// 🔍 DEBUG AMÉLIORÉ
+// =====================================================
+
+window.debugPaymentSummaries = function() {
+  console.log('🔍 Debug Récapitulatifs Paiement:');
+  
+  // Vérifier les éléments DOM
+  const elements = {
+    'summary-payment': document.getElementById('summary-payment'),
+    'locked-payment': document.getElementById('locked-payment'),
+    'selected_payment (champ)': document.getElementById('selected_payment'),
+    'payment_details (champ)': document.getElementById('payment_details')
+  };
+  
+  Object.entries(elements).forEach(([name, element]) => {
+    if (element) {
+      const value = element.textContent || element.value || '';
+      console.log(`- ${name}:`, `"${value}"`);
+    } else {
+      console.log(`- ${name}: ÉLÉMENT NON TROUVÉ`);
+    }
+  });
+  
+  // Vérifier la cohérence
+  const summaryValue = document.getElementById('summary-payment')?.textContent;
+  const lockedValue = document.getElementById('locked-payment')?.textContent;
+  
+  if (summaryValue === lockedValue) {
+    console.log('✅ Récapitulatifs synchronisés');
+  } else {
+    console.log('❌ Récapitulatifs désynchronisés:', {
+      standard: summaryValue,
+      sécurisé: lockedValue
+    });
+  }
+  
+  // Vérifier la variable globale
+  console.log('- Variable globale selectedPayment:', window.selectedPayment);
+  console.log('- Libellé attendu:', getPaymentLabelDetailed(window.selectedPayment));
+};
+
+console.log('🔄 Module mise à jour temps réel des récapitulatifs chargé.');
+console.log('   Utilisez testPaymentUpdateRealTime() pour test complet');
+console.log('   Utilisez debugPaymentSummaries() pour debug récapitulatifs');
