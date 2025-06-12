@@ -698,3 +698,334 @@ window.debugSignatureIntegration = function() {
     console.log('- Test validation signature:', window.validateDigitalSignature());
   }
 };
+
+// 🔧 PATCH COMPLET POUR L'ÉTAPE 4 - CORRECTIONS CIBLÉES
+// À ajouter à la fin du fichier enterprise-form.js
+
+// =====================================================
+// 🔧 CORRECTION 1 : Exposer calculateTotalPrice globalement
+// =====================================================
+
+window.calculateTotalPrice = function() {
+  if (!window.selectedFormat || !window.formatPrice) {
+    console.warn('Données de prix manquantes pour calculateTotalPrice');
+    return 0;
+  }
+  
+  let total = 0;
+  
+  if (window.isAnnualOffer) {
+    total = window.formatPrice; // Prix forfaitaire annuel
+  } else {
+    const nombreMois = window.selectedMonths?.length || 1;
+    total = window.formatPrice * nombreMois;
+  }
+  
+  console.log(`💰 Prix calculé: ${total}€ (Format: ${window.selectedFormat}, Annual: ${window.isAnnualOffer})`);
+  return total;
+};
+
+// =====================================================
+// 🔧 CORRECTION 2 : Créer le champ selected_payment manquant
+// =====================================================
+
+function createMissingPaymentField() {
+  // Vérifier si le champ existe déjà
+  if (document.getElementById('selected_payment')) {
+    return;
+  }
+  
+  // Créer le champ hidden
+  const paymentField = document.createElement('input');
+  paymentField.type = 'hidden';
+  paymentField.id = 'selected_payment';
+  paymentField.name = 'selected_payment';
+  paymentField.value = window.selectedPayment || '';
+  
+  // L'ajouter au formulaire
+  const form = document.getElementById('enterprise-form');
+  if (form) {
+    form.appendChild(paymentField);
+    console.log('✅ Champ selected_payment créé');
+  }
+}
+
+// =====================================================
+// 🔧 CORRECTION 3 : Améliorer updateSummary pour l'étape 4
+// =====================================================
+
+// Redéfinir updateSummary pour qu'elle gère mieux l'étape 4
+const originalUpdateSummary = window.updateSummary;
+
+window.updateSummary = function() {
+  // Appeler la fonction originale si elle existe
+  if (originalUpdateSummary && typeof originalUpdateSummary === 'function') {
+    originalUpdateSummary();
+  }
+  
+  // Améliorations spécifiques pour l'étape 4
+  if (window.currentStep === 4) {
+    updateStep4Summary();
+  }
+};
+
+function updateStep4Summary() {
+  console.log('🔄 Mise à jour récapitulatif étape 4');
+  
+  // Récupérer les données depuis les champs ET les variables globales
+  const entrepriseName = document.getElementById('entreprise_name')?.value || 'Non défini';
+  const contactName = document.getElementById('contact_name')?.value || 'Non défini';
+  const email = document.getElementById('email')?.value || '';
+  const telephone = document.getElementById('telephone')?.value || '';
+  
+  const selectedFormat = window.selectedFormat || 'Non défini';
+  const selectedMonths = window.isAnnualOffer 
+    ? 'Tous les mois (12 mois)' 
+    : (window.selectedMonths ? window.selectedMonths.join(', ') : 'Non défini');
+  
+  const selectedPayment = getPaymentLabel(window.selectedPayment || '');
+  const totalPrice = window.calculateTotalPrice();
+  
+  // Mettre à jour le récapitulatif standard
+  updateElement('summary-entreprise', entrepriseName);
+  updateElement('summary-contact', contactName);
+  updateElement('summary-format', selectedFormat);
+  updateElement('summary-months', selectedMonths);
+  updateElement('summary-payment', selectedPayment);
+  updateElement('summary-total', totalPrice + ' €');
+  
+  // Mettre à jour le récapitulatif sécurisé (locked)
+  updateElement('locked-entreprise', entrepriseName);
+  updateElement('locked-contact', contactName);
+  updateElement('locked-format', selectedFormat);
+  updateElement('locked-months', selectedMonths);
+  updateElement('locked-payment', selectedPayment);
+  updateElement('locked-total', totalPrice + ' €');
+  
+  // Mettre à jour les placeholders de signature
+  updateElement('agreement-contact-name', contactName);
+  updateElement('agreement-company-name', entrepriseName);
+  updateElement('agreement-total', totalPrice.toString());
+  
+  console.log('✅ Récapitulatif étape 4 mis à jour', {
+    entreprise: entrepriseName,
+    contact: contactName,
+    format: selectedFormat,
+    total: totalPrice
+  });
+}
+
+// =====================================================
+// 🔧 CORRECTION 4 : Fonction utilitaire pour libellés paiement
+// =====================================================
+
+function getPaymentLabel(paymentMode) {
+  const labels = {
+    'Virement': 'Virement bancaire',
+    'Cheque_Remise': 'Chèque - Remise main propre',
+    'Cheque_Poste': 'Chèque - Envoi postal',
+    'Cheque_Caserne': 'Chèque - Dépôt caserne'
+  };
+  return labels[paymentMode] || paymentMode || 'À définir';
+}
+
+// =====================================================
+// 🔧 CORRECTION 5 : Fonction utilitaire de mise à jour DOM
+// =====================================================
+
+function updateElement(elementId, value) {
+  const element = document.getElementById(elementId);
+  if (element) {
+    element.textContent = value;
+    return true;
+  } else {
+    console.warn(`⚠️ Élément ${elementId} non trouvé`);
+    return false;
+  }
+}
+
+// =====================================================
+// 🔧 CORRECTION 6 : Améliorer l'initialisation signature
+// =====================================================
+
+// Redéfinir la fonction showStep pour déclencher les mises à jour à l'étape 4
+const originalShowStep = window.showStep;
+
+window.showStep = function(step) {
+  // Appeler la fonction originale
+  if (originalShowStep && typeof originalShowStep === 'function') {
+    originalShowStep(step);
+  } else {
+    // Implémentation de base si pas d'originalShowStep
+    document.querySelectorAll('.form-section').forEach(section => {
+      section.classList.remove('active');
+    });
+    
+    const targetSection = document.getElementById(`step-${step}`);
+    if (targetSection) {
+      targetSection.classList.add('active');
+      window.currentStep = step;
+      if (window.updateProgressBar) window.updateProgressBar(step);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }
+  
+  // Actions spécifiques à l'étape 4
+  if (step === 4) {
+    setTimeout(() => {
+      initializeStep4Complete();
+    }, 300);
+  }
+};
+
+// =====================================================
+// 🔧 CORRECTION 7 : Initialisation complète étape 4
+// =====================================================
+
+function initializeStep4Complete() {
+  console.log('🚀 Initialisation complète étape 4');
+  
+  try {
+    // 1. Créer les champs manquants
+    createMissingPaymentField();
+    
+    // 2. Mettre à jour tous les récapitulatifs
+    updateStep4Summary();
+    
+    // 3. Initialiser la signature électronique
+    if (typeof window.initializeSignatureChoice === 'function') {
+      window.initializeSignatureChoice();
+    } else {
+      console.warn('⚠️ initializeSignatureChoice non disponible');
+    }
+    
+    // 4. Forcer l'initialisation de la traçabilité si signature électronique
+    const electronicSignature = document.getElementById('signature_electronic');
+    if (electronicSignature && electronicSignature.checked) {
+      if (typeof window.initializeDigitalSignature === 'function') {
+        window.initializeDigitalSignature();
+      } else {
+        // Initialisation manuelle de la traçabilité
+        initializeTraceabilityManual();
+      }
+    }
+    
+    console.log('✅ Étape 4 initialisée avec succès');
+    
+  } catch (error) {
+    console.error('❌ Erreur initialisation étape 4:', error);
+  }
+}
+
+// =====================================================
+// 🔧 CORRECTION 8 : Initialisation manuelle traçabilité
+// =====================================================
+
+function initializeTraceabilityManual() {
+  console.log('🔐 Initialisation manuelle traçabilité');
+  
+  // Générer les données de traçabilité
+  const now = new Date();
+  const validationId = `VAL-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  
+  // Mettre à jour l'affichage
+  updateElement('trace-timestamp', now.toLocaleString('fr-FR'));
+  updateElement('trace-validation-id', validationId);
+  
+  // Remplir les champs cachés
+  const timestampField = document.getElementById('validation_timestamp');
+  if (timestampField) timestampField.value = now.toISOString();
+  
+  const validationIdField = document.getElementById('validation_id');
+  if (validationIdField) validationIdField.value = validationId;
+  
+  const userAgentField = document.getElementById('user_agent');
+  if (userAgentField) userAgentField.value = navigator.userAgent;
+  
+  // Récupérer l'IP utilisateur
+  fetchUserIPManual();
+}
+
+// =====================================================
+// 🔧 CORRECTION 9 : Récupération IP manuelle
+// =====================================================
+
+async function fetchUserIPManual() {
+  try {
+    const response = await fetch('https://api.ipify.org?format=json');
+    const data = await response.json();
+    
+    updateElement('trace-ip', data.ip);
+    
+    const userIpField = document.getElementById('user_ip');
+    if (userIpField) userIpField.value = data.ip;
+    
+    console.log('🌐 IP utilisateur récupérée:', data.ip);
+  } catch (error) {
+    console.warn('⚠️ Impossible de récupérer l\'IP:', error);
+    updateElement('trace-ip', 'Non disponible');
+  }
+}
+
+// =====================================================
+// 🔧 CORRECTION 10 : Auto-correction au chargement
+// =====================================================
+
+// Fonction d'auto-correction si on est déjà à l'étape 4
+function autoFixStep4() {
+  setTimeout(() => {
+    const step4 = document.getElementById('step-4');
+    if (step4 && step4.classList.contains('active')) {
+      console.log('🔧 Auto-correction étape 4 détectée');
+      initializeStep4Complete();
+    }
+  }, 1000);
+}
+
+// =====================================================
+// 🔧 CORRECTION 11 : Fonction de test et debug
+// =====================================================
+
+window.fixStep4Now = function() {
+  console.log('🔧 Correction manuelle étape 4 déclenchée');
+  initializeStep4Complete();
+};
+
+window.debugStep4Fixed = function() {
+  console.log('🔍 Debug après corrections:');
+  
+  const elements = [
+    'summary-entreprise', 'summary-contact', 'summary-total',
+    'locked-entreprise', 'locked-contact', 'locked-total',
+    'agreement-contact-name', 'agreement-company-name',
+    'trace-timestamp', 'trace-ip'
+  ];
+  
+  elements.forEach(id => {
+    const el = document.getElementById(id);
+    console.log(`${id}:`, el ? el.textContent : 'NON TROUVÉ');
+  });
+  
+  console.log('calculateTotalPrice():', typeof window.calculateTotalPrice === 'function' ? window.calculateTotalPrice() : 'MANQUANTE');
+};
+
+// =====================================================
+// 🚀 INITIALISATION AUTOMATIQUE
+// =====================================================
+
+// Lancer l'auto-correction au chargement
+document.addEventListener('DOMContentLoaded', autoFixStep4);
+
+// Attacher aux événements de navigation
+document.addEventListener('click', function(e) {
+  // Si clic sur "suivant" vers étape 4
+  if (e.target && (e.target.id === 'next-step-3' || e.target.textContent.includes('SUIVANT'))) {
+    setTimeout(() => {
+      if (window.currentStep === 4) {
+        initializeStep4Complete();
+      }
+    }, 500);
+  }
+});
+
+console.log('🔧 Corrections étape 4 chargées. Utilisez fixStep4Now() pour forcer la correction.');
