@@ -3,79 +3,79 @@
 function setupFormSubmission() {
   const form = document.getElementById('enterprise-form');
   if (!form) return;
-  
+
   let isSubmitting = false;
-  
-  form.addEventListener('submit', function(e) {
+
+  form.addEventListener('submit', function (e) {
     e.preventDefault();
     e.stopPropagation();
-    
+
     if (isSubmitting) {
       console.log('⚠️ Soumission déjà en cours, ignorée');
       return;
     }
-    
+
     // ✅ AJOUT : Validation signature avant soumission
     if (window.currentStep === 4 && !window.validateDigitalSignature()) {
       console.log('❌ Validation signature échouée');
       return;
     }
-    
+
     console.log('📤 Début soumission formulaire avec signature');
-    
+
     // Validation finale existante...
     if (!window.selectedPayment) {
       const errorEl = document.getElementById('payment-error');
       if (errorEl) errorEl.style.display = 'block';
       return;
     }
-    
+
     const termsAccepted = document.getElementById('terms_accepted').checked;
     if (!termsAccepted) {
       const errorEl = document.getElementById('terms-error');
       if (errorEl) errorEl.style.display = 'block';
       return;
     }
-    
+
     isSubmitting = true;
-    
+
     // Désactiver tous les boutons
     const allButtons = document.querySelectorAll('button');
     allButtons.forEach(btn => btn.disabled = true);
-    
+
     const submitButton = document.querySelector('button[type="submit"]');
     if (submitButton) {
       submitButton.innerHTML = '<span class="loading"></span> Finalisation signature...';
     }
-    
+
     // ✅ AJOUT : Inclure les données de signature dans le payload
     const payload = {
       form_name: "enterprise-form",
       source: "formulaire_web_direct",
       timestamp: new Date().toISOString(),
       page_url: window.location.href,
-      
+
       // Informations entreprise
       entreprise_name: document.getElementById('entreprise_name').value,
       adresse: document.getElementById('adresse').value,
       contact_name: document.getElementById('contact_name').value,
       email: document.getElementById('email').value,
       telephone: document.getElementById('telephone').value,
-      
+
       // Format et prix
       selected_format: window.selectedFormat,
       format_price: window.formatPrice,
-      
+
       // Mois sélectionnés
       selected_months: window.selectedMonths ? window.selectedMonths.join(',') : '',
       nombre_parutions: window.isAnnualOffer ? 12 : (window.selectedMonths?.length || 1),
       is_annual_offer: window.isAnnualOffer || false,
-      
+
       // Paiement
       selected_payment: window.selectedPayment,
       payment_details: document.querySelector('.payment-card.selected')?.getAttribute('data-details') || '',
-      rdv_preference: document.getElementById('rdv_preference')?.value || '',      
-          
+      rdv_preference: document.getElementById('rdv_preference')?.value || '',
+
       // ✅ NOUVEAUX CHAMPS : Données de signature électronique
       contractual_agreement: document.getElementById('contractual_agreement')?.checked || false,
       signature_name: document.getElementById('signature_name')?.value || '',
@@ -97,22 +97,22 @@ function setupFormSubmission() {
       terms_accepted: termsAccepted,
       entrepriseId: getEnterpriseIdFromURL(),
       user_agent: navigator.userAgent,
-      
+
       // ✅ NOUVEAU : Marquer comme signé électroniquement
       is_electronically_signed: true,
       signature_method: 'Validation électronique renforcée'
     };
-    
+
     console.log('📤 Envoi payload avec signature:', {
       validation_id: payload.validation_id,
       signature_name: payload.signature_name,
       is_signed: payload.is_electronically_signed
     });
-    
+
     // Envoi vers le gateway (code existant)
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 30000);
-    
+
     fetch('https://n8n.dsolution-ia.fr/webhook/gateway-calendrier', {
       method: 'POST',
       headers: {
@@ -122,34 +122,34 @@ function setupFormSubmission() {
       body: JSON.stringify(payload),
       signal: controller.signal
     })
-    .then(response => {
-      clearTimeout(timeoutId);
-      
-      if (response.ok) {
-        return response.json();
-      }
-      throw new Error(`Erreur serveur: ${response.status} - ${response.statusText}`);
-    })
-    .then(data => {
-      console.log('✅ Réponse Gateway avec signature:', data);
-      showConfirmation(payload, data);
-    })
-    .catch(error => {
-      console.error('❌ Erreur lors de l\'envoi:', error);
-      
-      isSubmitting = false;
-      
-      // Réactiver le formulaire
-      const formInputs = form.querySelectorAll('input, select, textarea, button');
-      formInputs.forEach(input => input.disabled = false);
-      
-      if (submitButton) {
-        submitButton.disabled = false;
-        submitButton.innerHTML = 'CONFIRMER MA COMMANDE';
-      }
-      
-      alert('Une erreur est survenue lors de l\'envoi du formulaire. Veuillez réessayer.');
-    });
+      .then(response => {
+        clearTimeout(timeoutId);
+
+        if (response.ok) {
+          return response.json();
+        }
+        throw new Error(`Erreur serveur: ${response.status} - ${response.statusText}`);
+      })
+      .then(data => {
+        console.log('✅ Réponse Gateway avec signature:', data);
+        showConfirmation(payload, data);
+      })
+      .catch(error => {
+        console.error('❌ Erreur lors de l\'envoi:', error);
+
+        isSubmitting = false;
+
+        // Réactiver le formulaire
+        const formInputs = form.querySelectorAll('input, select, textarea, button');
+        formInputs.forEach(input => input.disabled = false);
+
+        if (submitButton) {
+          submitButton.disabled = false;
+          submitButton.innerHTML = 'CONFIRMER MA COMMANDE';
+        }
+
+        alert('Une erreur est survenue lors de l\'envoi du formulaire. Veuillez réessayer.');
+      });
   });
 }
 
@@ -162,7 +162,7 @@ function getEnterpriseIdFromURL() {
 // ✅ MODIFICATION 2 : Mettre à jour showConfirmation pour inclure les infos de signature
 function showConfirmation(formData, gatewayResponse) {
   console.log('📋 Affichage confirmation avec signature');
-  
+
   // Mettre à jour la confirmation avec les données
   const elements = {
     'confirmation-order-number': formData.orderNumber,
@@ -170,24 +170,24 @@ function showConfirmation(formData, gatewayResponse) {
     'confirmation-months': formData.selected_months.replace(/,/g, ', '),
     'confirmation-total': formData.prixTotal + ' €'
   };
-  
+
   Object.entries(elements).forEach(([id, value]) => {
     const element = document.getElementById(id);
     if (element) element.textContent = value;
   });
-  
+
   const paymentLabels = {
     'Virement': 'Virement bancaire',
     'Cheque_Remise': 'Chèque - Remise en main propre',
     'Cheque_Poste': 'Chèque - Envoi postal',
     'Cheque_Caserne': 'Chèque - Dépôt caserne'
   };
-  
+
   const confirmationPayment = document.getElementById('confirmation-payment');
   if (confirmationPayment) {
     confirmationPayment.textContent = paymentLabels[formData.selected_payment] || formData.selected_payment;
   }
-  
+
   // ✅ AJOUT : Message de signature dans la confirmation
   const confirmationDiv = document.getElementById('confirmation');
   if (confirmationDiv && formData.is_electronically_signed) {
@@ -202,7 +202,7 @@ function showConfirmation(formData, gatewayResponse) {
       margin: 20px 0;
       text-align: center;
     `;
-    
+
     signatureConfirmation.innerHTML = `
       <h3 style="color: #155724; margin-top: 0;">🔐 Signature Électronique Confirmée</h3>
       <p><strong>Signataire :</strong> ${formData.signature_name}</p>
@@ -214,7 +214,7 @@ function showConfirmation(formData, gatewayResponse) {
         </a>
       </p>
     `;
-    
+
     // Insérer après le récapitulatif
     const summarySection = confirmationDiv.querySelector('.summary-section');
     if (summarySection) {
@@ -223,31 +223,31 @@ function showConfirmation(formData, gatewayResponse) {
       confirmationDiv.appendChild(signatureConfirmation);
     }
   }
-  
+
   // ✅ MASQUER DÉFINITIVEMENT LE FORMULAIRE
   document.querySelectorAll('.form-section').forEach(section => {
     section.classList.remove('active');
     section.style.display = 'none'; // ✅ Forcer le masquage
   });
-  
+
   const confirmation = document.getElementById('confirmation');
   if (confirmation) {
     confirmation.style.display = 'block';
     confirmation.scrollIntoView({ behavior: 'smooth' });
   }
-  
+
   // Mettre la barre de progression à 100%
   document.querySelectorAll('.progress-step').forEach(step => {
     step.classList.add('completed');
     step.classList.remove('active');
   });
-  
+
   // ✅ MASQUER AUSSI LA BARRE DE PROGRESSION
   const progressContainer = document.querySelector('.progress-container');
   if (progressContainer) {
     progressContainer.style.display = 'none';
   }
-  
+
   console.log('✅ Confirmation affichée avec signature, formulaire désactivé définitivement');
 }
 // Fix pour enterprise-form.js - Ajout à la fin du fichier enterprise-form.js existant
@@ -256,11 +256,11 @@ function showConfirmation(formData, gatewayResponse) {
 (function forceEnterpriseFormInitialization() {
   // Vérifier si l'initialisation a échoué
   const checkInitialization = () => {
-    const isMainScriptLoaded = 
-      typeof currentStep !== 'undefined' && 
-      typeof selectedFormat !== 'undefined' && 
+    const isMainScriptLoaded =
+      typeof currentStep !== 'undefined' &&
+      typeof selectedFormat !== 'undefined' &&
       typeof showStep === 'function';
-    
+
     if (!isMainScriptLoaded) {
       console.warn("⚠️ enterprise-form.js non initialisé, initialisation forcée...");
       initializeEnterpriseFormManually();
@@ -268,15 +268,15 @@ function showConfirmation(formData, gatewayResponse) {
       console.log("✅ enterprise-form.js déjà initialisé correctement");
     }
   };
-  
+
   // Attendre et vérifier plusieurs fois
   setTimeout(checkInitialization, 100);
   setTimeout(checkInitialization, 500);
   setTimeout(checkInitialization, 1000);
-  
+
   function initializeEnterpriseFormManually() {
     console.log("🔧 Initialisation manuelle d'enterprise-form...");
-    
+
     // Redéclarer les variables globales manquantes
     window.currentStep = 1;
     window.selectedFormat = '';
@@ -284,9 +284,9 @@ function showConfirmation(formData, gatewayResponse) {
     window.selectedMonths = [];
     window.isAnnualOffer = false;
     window.selectedPayment = '';
-    
+
     // Fonction pour mettre à jour la barre de progression
-    window.updateProgressBar = function(step) {
+    window.updateProgressBar = function (step) {
       document.querySelectorAll('.progress-step').forEach((stepEl, index) => {
         const stepNumber = index + 1;
         if (stepNumber < step) {
@@ -300,14 +300,14 @@ function showConfirmation(formData, gatewayResponse) {
         }
       });
     };
-    
+
     // Fonction pour afficher une étape
-    window.showStep = function(step) {
+    window.showStep = function (step) {
       // Masquer toutes les sections
       document.querySelectorAll('.form-section').forEach(section => {
         section.classList.remove('active');
       });
-      
+
       // Afficher la section demandée
       const targetSection = document.getElementById(`step-${step}`);
       if (targetSection) {
@@ -315,7 +315,7 @@ function showConfirmation(formData, gatewayResponse) {
         window.currentStep = step;
         window.updateProgressBar(step);
         window.scrollTo({ top: 0, behavior: 'smooth' });
-        
+
         // ✅ AJOUT : Si on arrive à l'étape 4, initialiser la signature
         if (step === 4) {
           setTimeout(async () => {
@@ -326,26 +326,26 @@ function showConfirmation(formData, gatewayResponse) {
         }
       }
     };
-    
+
     // Fonction pour mettre à jour le récapitulatif
-    window.updateSummary = function() {
+    window.updateSummary = function () {
       if (!window.selectedFormat) return;
-      
+
       // Format
       const summaryFormat = document.getElementById('summary-format');
       if (summaryFormat) summaryFormat.textContent = window.selectedFormat;
-      
+
       // Mois
-      const monthsText = window.isAnnualOffer ? 'Tous les mois' : 
-                       window.selectedMonths.length > 0 ? window.selectedMonths.join(', ') : '-';
+      const monthsText = window.isAnnualOffer ? 'Tous les mois' :
+        window.selectedMonths.length > 0 ? window.selectedMonths.join(', ') : '-';
       const summaryMonths = document.getElementById('summary-months');
       if (summaryMonths) summaryMonths.textContent = monthsText;
-      
+
       // Parutions
       const nombreParutions = window.isAnnualOffer ? 12 : parseInt(document.getElementById('nombre_parutions')?.value) || 1;
       const summaryParutions = document.getElementById('summary-parutions');
       if (summaryParutions) summaryParutions.textContent = nombreParutions;
-      
+
       // Prix total
       let total = 0;
       if (window.isAnnualOffer) {
@@ -353,18 +353,18 @@ function showConfirmation(formData, gatewayResponse) {
       } else {
         total = window.formatPrice * nombreParutions;
       }
-      
+
       const summaryTotal = document.getElementById('summary-total');
       if (summaryTotal) summaryTotal.textContent = total + ' €';
     };
-    
+
     // Fonction pour basculer un mois
-    window.toggleMonth = function(element) {
+    window.toggleMonth = function (element) {
       if (element.classList.contains('unavailable')) return;
-      
+
       const month = element.getAttribute('data-month');
       const maxParutions = parseInt(document.getElementById('nombre_parutions')?.value) || 1;
-      
+
       if (element.classList.contains('selected')) {
         // Désélectionner
         element.classList.remove('selected');
@@ -379,69 +379,69 @@ function showConfirmation(formData, gatewayResponse) {
           return;
         }
       }
-      
+
       const selectedMonthsInput = document.getElementById('selected_months');
       if (selectedMonthsInput) {
         selectedMonthsInput.value = window.selectedMonths.join(',');
       }
-      
+
       const monthError = document.getElementById('month-error');
       if (monthError) monthError.style.display = 'none';
-      
+
       window.updateSummary();
     };
-    
+
     // Réattacher tous les gestionnaires d'événements
     attachAllEventHandlers();
-    
+
     console.log("✅ Initialisation manuelle terminée");
   }
-  
+
   function attachAllEventHandlers() {
     console.log("🔗 Attachement des gestionnaires d'événements...");
-    
+
     // === ÉTAPE 1 ===
     const nextStep1 = document.getElementById('next-step-1');
     if (nextStep1) {
-      nextStep1.onclick = function() {
+      nextStep1.onclick = function () {
         if (validateStep1()) {
           window.showStep(2);
         }
       };
     }
-    
+
     // === ÉTAPE 2 ===
     const prevStep2 = document.getElementById('prev-step-2');
     const nextStep2 = document.getElementById('next-step-2');
-    
+
     if (prevStep2) {
       prevStep2.onclick = () => window.showStep(1);
     }
-    
+
     if (nextStep2) {
-      nextStep2.onclick = function() {
+      nextStep2.onclick = function () {
         if (!window.selectedFormat) {
           const formatError = document.getElementById('format-error');
           if (formatError) formatError.style.display = 'block';
           return;
         }
-        
+
         configureStep3();
         window.updateSummary();
         window.showStep(3);
       };
     }
-    
+
     // === ÉTAPE 3 ===
     const prevStep3 = document.getElementById('prev-step-3');
     const nextStep3 = document.getElementById('next-step-3');
-    
+
     if (prevStep3) {
       prevStep3.onclick = () => window.showStep(2);
     }
-    
+
     if (nextStep3) {
-      nextStep3.onclick = function() {
+      nextStep3.onclick = function () {
         if (!window.isAnnualOffer && window.selectedMonths.length === 0) {
           const monthError = document.getElementById('month-error');
           if (monthError) monthError.style.display = 'block';
@@ -450,64 +450,64 @@ function showConfirmation(formData, gatewayResponse) {
         window.showStep(4);
       };
     }
-    
+
     // === ÉTAPE 4 ===
     const prevStep4 = document.getElementById('prev-step-4');
     if (prevStep4) {
       prevStep4.onclick = () => window.showStep(3);
     }
-    
+
     // === GESTION VALIDATION ÉLECTRONIQUE ===
     if (typeof window.setupSignatureValidation === 'function') {
       window.setupSignatureValidation();
     }
-    
+
     // === GESTION SÉLECTION FORMAT ===
     document.querySelectorAll('.format-card').forEach(card => {
-      card.onclick = function() {
+      card.onclick = function () {
         // Désélectionner tous les formats
         document.querySelectorAll('.format-card').forEach(c => c.classList.remove('selected'));
-        
+
         // Sélectionner le format cliqué
         this.classList.add('selected');
-        
+
         // Stocker les informations
         window.selectedFormat = this.getAttribute('data-format');
         window.formatPrice = parseInt(this.getAttribute('data-price'));
         window.isAnnualOffer = this.getAttribute('data-annual') === 'true';
-        
+
         // Mettre à jour les champs cachés
         const selectedFormatInput = document.getElementById('selected_format');
         const formatPriceInput = document.getElementById('format_price');
         if (selectedFormatInput) selectedFormatInput.value = window.selectedFormat;
         if (formatPriceInput) formatPriceInput.value = window.formatPrice;
-        
+
         // Mettre à jour le récapitulatif
         window.updateSummary();
-        
+
         // Masquer l'erreur
         const formatError = document.getElementById('format-error');
         if (formatError) formatError.style.display = 'none';
       };
     });
-    
+
     // === GESTION SÉLECTION MOIS ===
     document.querySelectorAll('.month-card').forEach(card => {
-      card.onclick = function() {
+      card.onclick = function () {
         window.toggleMonth(this);
       };
     });
-    
+
     // === GESTION NOMBRE DE PARUTIONS ===
     const nombreParutionsInput = document.getElementById('nombre_parutions');
     if (nombreParutionsInput) {
-      nombreParutionsInput.onchange = function() {
+      nombreParutionsInput.onchange = function () {
         const nombreParutions = parseInt(this.value) || 1;
-        
+
         // Limiter entre 1 et 12
         if (nombreParutions < 1) this.value = 1;
         if (nombreParutions > 12) this.value = 12;
-        
+
         // Si trop de mois sélectionnés, désélectionner les derniers
         const actualNombre = parseInt(this.value);
         if (window.selectedMonths.length > actualNombre) {
@@ -524,34 +524,34 @@ function showConfirmation(formData, gatewayResponse) {
             selectedMonthsInput.value = window.selectedMonths.join(',');
           }
         }
-        
+
         window.updateSummary();
       };
     }
-    
+
     // === GESTION PAIEMENT ===
     document.querySelectorAll('.payment-card').forEach(card => {
-      card.onclick = function() {
+      card.onclick = function () {
         // Désélectionner tous les modes
         document.querySelectorAll('.payment-card').forEach(c => c.classList.remove('selected'));
-        
+
         // Sélectionner le mode cliqué
         this.classList.add('selected');
-        
+
         // Stocker les informations
         window.selectedPayment = this.getAttribute('data-payment');
         const paymentDetails = this.getAttribute('data-details');
-        
+
         const selectedPaymentInput = document.getElementById('selected_payment');
         const paymentDetailsInput = document.getElementById('payment_details');
         if (selectedPaymentInput) selectedPaymentInput.value = window.selectedPayment;
         if (paymentDetailsInput) paymentDetailsInput.value = paymentDetails || '';
-        
+
         // Masquer toutes les sections de détails
         document.querySelectorAll('.payment-details').forEach(detail => {
           detail.style.display = 'none';
         });
-        
+
         // Afficher la section correspondante
         if (paymentDetails) {
           const detailSection = document.getElementById(paymentDetails + '-details');
@@ -559,33 +559,33 @@ function showConfirmation(formData, gatewayResponse) {
             detailSection.style.display = 'block';
           }
         }
-        
+
         const paymentError = document.getElementById('payment-error');
         if (paymentError) paymentError.style.display = 'none';
       };
     });
-    
+
     console.log("✅ Tous les gestionnaires d'événements attachés");
   }
-  
+
   function validateStep1() {
     const contactName = document.getElementById('contact_name')?.value.trim();
     const email = document.getElementById('email')?.value.trim();
     const telephone = document.getElementById('telephone')?.value.trim();
     const entrepriseName = document.getElementById('entreprise_name')?.value.trim();
     const adresse = document.getElementById('adresse')?.value.trim();
-    
+
     let isValid = true;
-    
+
     // Masquer toutes les erreurs
     document.querySelectorAll('.error-message').forEach(err => err.style.display = 'none');
-    
+
     if (!contactName) {
       const contactError = document.getElementById('contact-error');
       if (contactError) contactError.style.display = 'block';
       isValid = false;
     }
-    
+
     // Validation email
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!email || !emailRegex.test(email)) {
@@ -593,34 +593,34 @@ function showConfirmation(formData, gatewayResponse) {
       if (emailError) emailError.style.display = 'block';
       isValid = false;
     }
-    
+
     // Validation téléphone
     if (!telephone || telephone.length < 10) {
       const telephoneError = document.getElementById('telephone-error');
       if (telephoneError) telephoneError.style.display = 'block';
       isValid = false;
     }
-    
+
     if (!entrepriseName || !adresse) {
       alert('Les informations entreprise sont requises. Utilisez le lien personnalisé fourni.');
       isValid = false;
     }
-    
+
     return isValid;
   }
-  
+
   function configureStep3() {
     if (window.isAnnualOffer) {
       const monthSelectionText = document.getElementById('month-selection-text');
       const annualText = document.getElementById('annual-text');
       const monthSelector = document.getElementById('month-selector');
       const parutionsRow = document.getElementById('parutions-row');
-      
+
       if (monthSelectionText) monthSelectionText.style.display = 'none';
       if (annualText) annualText.style.display = 'block';
       if (monthSelector) monthSelector.style.display = 'none';
       if (parutionsRow) parutionsRow.style.display = 'none';
-      
+
       // Sélectionner tous les mois
       window.selectedMonths = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
       const selectedMonthsInput = document.getElementById('selected_months');
@@ -632,24 +632,24 @@ function showConfirmation(formData, gatewayResponse) {
       const annualText = document.getElementById('annual-text');
       const monthSelector = document.getElementById('month-selector');
       const parutionsRow = document.getElementById('parutions-row');
-      
+
       if (monthSelectionText) monthSelectionText.style.display = 'block';
       if (annualText) annualText.style.display = 'none';
       if (monthSelector) monthSelector.style.display = 'block';
       if (parutionsRow) parutionsRow.style.display = 'block';
-      
+
       // Réinitialiser
       window.selectedMonths = [];
       const selectedMonthsInput = document.getElementById('selected_months');
       const nombreParutionsInput = document.getElementById('nombre_parutions');
       if (selectedMonthsInput) selectedMonthsInput.value = '';
       if (nombreParutionsInput) nombreParutionsInput.value = 1;
-      
+
       // Désélectionner tous les mois
       document.querySelectorAll('.month-card').forEach(card => {
         card.classList.remove('selected', 'unavailable');
       });
-      
+
       // Marquer certains mois comme indisponibles
       const unavailableMonths = ['Février', 'Juillet'];
       unavailableMonths.forEach(month => {
@@ -663,7 +663,7 @@ function showConfirmation(formData, gatewayResponse) {
 })();
 
 // ✅ APPEL DE LA FONCTION DE SOUMISSION - À AJOUTER À LA FIN
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
   // Attendre que l'initialisation soit terminée
   setTimeout(() => {
     setupFormSubmission();
@@ -672,7 +672,7 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // ✅ MODIFICATION 4 : Assurer que les scripts de signature sont chargés
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
   // Vérifier que le script de signature est bien chargé
   if (typeof window.initializeDigitalSignature !== 'function') {
     console.warn('⚠️ Script de signature électronique non chargé');
@@ -682,7 +682,7 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // ✅ NOUVELLE FONCTION : Debug pour tester la signature
-window.debugSignatureIntegration = function() {
+window.debugSignatureIntegration = function () {
   console.log('🔍 Debug Intégration Signature:');
   console.log('- Étape actuelle:', window.currentStep);
   console.log('- Fonction signature disponible:', typeof window.initializeDigitalSignature);
@@ -692,7 +692,7 @@ window.debugSignatureIntegration = function() {
     password: !!document.getElementById('signature_password'),
     validationId: !!document.getElementById('validation_id')
   });
-  
+
   // Tester la validation
   if (window.currentStep === 4) {
     console.log('- Test validation signature:', window.validateDigitalSignature());
@@ -706,21 +706,21 @@ window.debugSignatureIntegration = function() {
 // 🔧 CORRECTION 1 : Exposer calculateTotalPrice globalement
 // =====================================================
 
-window.calculateTotalPrice = function() {
+window.calculateTotalPrice = function () {
   if (!window.selectedFormat || !window.formatPrice) {
     console.warn('Données de prix manquantes pour calculateTotalPrice');
     return 0;
   }
-  
+
   let total = 0;
-  
+
   if (window.isAnnualOffer) {
     total = window.formatPrice; // Prix forfaitaire annuel
   } else {
     const nombreMois = window.selectedMonths?.length || 1;
     total = window.formatPrice * nombreMois;
   }
-  
+
   console.log(`💰 Prix calculé: ${total}€ (Format: ${window.selectedFormat}, Annual: ${window.isAnnualOffer})`);
   return total;
 };
@@ -734,14 +734,14 @@ function createMissingPaymentField() {
   if (document.getElementById('selected_payment')) {
     return;
   }
-  
+
   // Créer le champ hidden
   const paymentField = document.createElement('input');
   paymentField.type = 'hidden';
   paymentField.id = 'selected_payment';
   paymentField.name = 'selected_payment';
   paymentField.value = window.selectedPayment || '';
-  
+
   // L'ajouter au formulaire
   const form = document.getElementById('enterprise-form');
   if (form) {
@@ -757,12 +757,12 @@ function createMissingPaymentField() {
 // Redéfinir updateSummary pour qu'elle gère mieux l'étape 4
 const originalUpdateSummary = window.updateSummary;
 
-window.updateSummary = function() {
+window.updateSummary = function () {
   // Appeler la fonction originale si elle existe
   if (originalUpdateSummary && typeof originalUpdateSummary === 'function') {
     originalUpdateSummary();
   }
-  
+
   // Améliorations spécifiques pour l'étape 4
   if (window.currentStep === 4) {
     updateStep4Summary();
@@ -771,21 +771,21 @@ window.updateSummary = function() {
 
 function updateStep4Summary() {
   console.log('🔄 Mise à jour récapitulatif étape 4');
-  
+
   // Récupérer les données depuis les champs ET les variables globales
   const entrepriseName = document.getElementById('entreprise_name')?.value || 'Non défini';
   const contactName = document.getElementById('contact_name')?.value || 'Non défini';
   const email = document.getElementById('email')?.value || '';
   const telephone = document.getElementById('telephone')?.value || '';
-  
+
   const selectedFormat = window.selectedFormat || 'Non défini';
-  const selectedMonths = window.isAnnualOffer 
-    ? 'Tous les mois (12 mois)' 
+  const selectedMonths = window.isAnnualOffer
+    ? 'Tous les mois (12 mois)'
     : (window.selectedMonths ? window.selectedMonths.join(', ') : 'Non défini');
-  
+
   const selectedPayment = getPaymentLabel(window.selectedPayment || '');
   const totalPrice = window.calculateTotalPrice();
-  
+
   // Mettre à jour le récapitulatif standard
   updateElement('summary-entreprise', entrepriseName);
   updateElement('summary-contact', contactName);
@@ -793,7 +793,7 @@ function updateStep4Summary() {
   updateElement('summary-months', selectedMonths);
   updateElement('summary-payment', selectedPayment);
   updateElement('summary-total', totalPrice + ' €');
-  
+
   // Mettre à jour le récapitulatif sécurisé (locked)
   updateElement('locked-entreprise', entrepriseName);
   updateElement('locked-contact', contactName);
@@ -801,12 +801,12 @@ function updateStep4Summary() {
   updateElement('locked-months', selectedMonths);
   updateElement('locked-payment', selectedPayment);
   updateElement('locked-total', totalPrice + ' €');
-  
+
   // Mettre à jour les placeholders de signature
   updateElement('agreement-contact-name', contactName);
   updateElement('agreement-company-name', entrepriseName);
   updateElement('agreement-total', totalPrice.toString());
-  
+
   console.log('✅ Récapitulatif étape 4 mis à jour', {
     entreprise: entrepriseName,
     contact: contactName,
@@ -851,7 +851,7 @@ function updateElement(elementId, value) {
 // Redéfinir la fonction showStep pour déclencher les mises à jour à l'étape 4
 const originalShowStep = window.showStep;
 
-window.showStep = function(step) {
+window.showStep = function (step) {
   // Appeler la fonction originale
   if (originalShowStep && typeof originalShowStep === 'function') {
     originalShowStep(step);
@@ -860,7 +860,7 @@ window.showStep = function(step) {
     document.querySelectorAll('.form-section').forEach(section => {
       section.classList.remove('active');
     });
-    
+
     const targetSection = document.getElementById(`step-${step}`);
     if (targetSection) {
       targetSection.classList.add('active');
@@ -869,7 +869,7 @@ window.showStep = function(step) {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   }
-  
+
   // Actions spécifiques à l'étape 4
   if (step === 4) {
     setTimeout(() => {
@@ -884,21 +884,21 @@ window.showStep = function(step) {
 
 function initializeStep4Complete() {
   console.log('🚀 Initialisation complète étape 4');
-  
+
   try {
     // 1. Créer les champs manquants
     createMissingPaymentField();
-    
+
     // 2. Mettre à jour tous les récapitulatifs
     updateStep4Summary();
-    
+
     // 3. Initialiser la signature électronique
     if (typeof window.initializeSignatureChoice === 'function') {
       window.initializeSignatureChoice();
     } else {
       console.warn('⚠️ initializeSignatureChoice non disponible');
     }
-    
+
     // 4. Forcer l'initialisation de la traçabilité si signature électronique
     const electronicSignature = document.getElementById('signature_electronic');
     if (electronicSignature && electronicSignature.checked) {
@@ -909,9 +909,9 @@ function initializeStep4Complete() {
         initializeTraceabilityManual();
       }
     }
-    
+
     console.log('✅ Étape 4 initialisée avec succès');
-    
+
   } catch (error) {
     console.error('❌ Erreur initialisation étape 4:', error);
   }
@@ -923,25 +923,25 @@ function initializeStep4Complete() {
 
 function initializeTraceabilityManual() {
   console.log('🔐 Initialisation manuelle traçabilité');
-  
+
   // Générer les données de traçabilité
   const now = new Date();
   const validationId = `VAL-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-  
+
   // Mettre à jour l'affichage
   updateElement('trace-timestamp', now.toLocaleString('fr-FR'));
   updateElement('trace-validation-id', validationId);
-  
+
   // Remplir les champs cachés
   const timestampField = document.getElementById('validation_timestamp');
   if (timestampField) timestampField.value = now.toISOString();
-  
+
   const validationIdField = document.getElementById('validation_id');
   if (validationIdField) validationIdField.value = validationId;
-  
+
   const userAgentField = document.getElementById('user_agent');
   if (userAgentField) userAgentField.value = navigator.userAgent;
-  
+
   // Récupérer l'IP utilisateur
   fetchUserIPManual();
 }
@@ -954,12 +954,12 @@ async function fetchUserIPManual() {
   try {
     const response = await fetch('https://api.ipify.org?format=json');
     const data = await response.json();
-    
+
     updateElement('trace-ip', data.ip);
-    
+
     const userIpField = document.getElementById('user_ip');
     if (userIpField) userIpField.value = data.ip;
-    
+
     console.log('🌐 IP utilisateur récupérée:', data.ip);
   } catch (error) {
     console.warn('⚠️ Impossible de récupérer l\'IP:', error);
@@ -986,26 +986,26 @@ function autoFixStep4() {
 // 🔧 CORRECTION 11 : Fonction de test et debug
 // =====================================================
 
-window.fixStep4Now = function() {
+window.fixStep4Now = function () {
   console.log('🔧 Correction manuelle étape 4 déclenchée');
   initializeStep4Complete();
 };
 
-window.debugStep4Fixed = function() {
+window.debugStep4Fixed = function () {
   console.log('🔍 Debug après corrections:');
-  
+
   const elements = [
     'summary-entreprise', 'summary-contact', 'summary-total',
     'locked-entreprise', 'locked-contact', 'locked-total',
     'agreement-contact-name', 'agreement-company-name',
     'trace-timestamp', 'trace-ip'
   ];
-  
+
   elements.forEach(id => {
     const el = document.getElementById(id);
     console.log(`${id}:`, el ? el.textContent : 'NON TROUVÉ');
   });
-  
+
   console.log('calculateTotalPrice():', typeof window.calculateTotalPrice === 'function' ? window.calculateTotalPrice() : 'MANQUANTE');
 };
 
@@ -1017,7 +1017,7 @@ window.debugStep4Fixed = function() {
 document.addEventListener('DOMContentLoaded', autoFixStep4);
 
 // Attacher aux événements de navigation
-document.addEventListener('click', function(e) {
+document.addEventListener('click', function (e) {
   // Si clic sur "suivant" vers étape 4
   if (e.target && (e.target.id === 'next-step-3' || e.target.textContent.includes('SUIVANT'))) {
     setTimeout(() => {
@@ -1029,3 +1029,280 @@ document.addEventListener('click', function(e) {
 });
 
 console.log('🔧 Corrections étape 4 chargées. Utilisez fixStep4Now() pour forcer la correction.');
+
+// 💳 GESTION DE LA SÉLECTION DU MODE DE PAIEMENT
+// À ajouter dans enterprise-form.js après les autres corrections
+
+// =====================================================
+// 🔧 GESTION DES CARTES DE PAIEMENT
+// =====================================================
+
+function setupPaymentSelection() {
+  console.log('💳 Initialisation sélection mode de paiement');
+
+  // Attacher les événements aux cartes de paiement
+  document.querySelectorAll('.payment-card').forEach(card => {
+    card.addEventListener('click', function () {
+      selectPaymentMethod(this);
+    });
+  });
+
+  // Attacher l'événement au select de RDV pour chèque remise
+  const rdvSelect = document.getElementById('rdv_preference');
+  if (rdvSelect) {
+    rdvSelect.addEventListener('change', function () {
+      updateRdvDetails(this.value);
+    });
+  }
+
+  console.log('✅ Gestion paiement configurée');
+}
+
+// =====================================================
+// 🔧 SÉLECTION D'UN MODE DE PAIEMENT
+// =====================================================
+
+function selectPaymentMethod(selectedCard) {
+  // Désélectionner toutes les cartes
+  document.querySelectorAll('.payment-card').forEach(card => {
+    card.classList.remove('selected');
+  });
+
+  // Sélectionner la carte cliquée
+  selectedCard.classList.add('selected');
+
+  // Récupérer les informations
+  const paymentMethod = selectedCard.getAttribute('data-payment');
+  const paymentDetails = selectedCard.getAttribute('data-details');
+
+  // Stocker les informations
+  window.selectedPayment = paymentMethod;
+
+  // Mettre à jour les champs cachés
+  const selectedPaymentInput = document.getElementById('selected_payment');
+  const paymentDetailsInput = document.getElementById('payment_details');
+
+  if (selectedPaymentInput) selectedPaymentInput.value = paymentMethod;
+  if (paymentDetailsInput) paymentDetailsInput.value = paymentDetails || '';
+
+  // Masquer toutes les sections de détails
+  document.querySelectorAll('.payment-details').forEach(detail => {
+    detail.style.display = 'none';
+  });
+
+  // Afficher la section correspondante
+  if (paymentDetails) {
+    const detailSection = document.getElementById(paymentDetails + '-details');
+    if (detailSection) {
+      detailSection.style.display = 'block';
+
+      // Animation d'apparition
+      detailSection.style.opacity = '0';
+      detailSection.style.transform = 'translateY(-10px)';
+
+      setTimeout(() => {
+        detailSection.style.transition = 'all 0.3s ease';
+        detailSection.style.opacity = '1';
+        detailSection.style.transform = 'translateY(0)';
+      }, 50);
+    }
+  }
+
+  // Masquer l'erreur de paiement
+  const paymentError = document.getElementById('payment-error');
+  if (paymentError) paymentError.style.display = 'none';
+
+  // Mettre à jour le récapitulatif
+  if (typeof window.updateSummary === 'function') {
+    window.updateSummary();
+  }
+
+  // Log pour debug
+  console.log('💳 Mode de paiement sélectionné:', {
+    method: paymentMethod,
+    details: paymentDetails,
+    globalVar: window.selectedPayment
+  });
+}
+
+// =====================================================
+// 🔧 GESTION DES DÉTAILS RDV
+// =====================================================
+
+function updateRdvDetails(rdvType) {
+  const paymentDetailsInput = document.getElementById('payment_details');
+  if (paymentDetailsInput) {
+    // Enrichir les détails avec la préférence RDV
+    const baseDetails = paymentDetailsInput.value || 'cheque_remise';
+    paymentDetailsInput.value = `${baseDetails}_${rdvType}`;
+  }
+
+  console.log('🤝 Préférence RDV mise à jour:', rdvType);
+}
+
+// =====================================================
+// 🔧 AMÉLIORATION DE updateSummary POUR LE PAIEMENT
+// =====================================================
+
+// Étendre la fonction getPaymentLabel pour plus de détails
+function getPaymentLabelDetailed(paymentMode) {
+  const labels = {
+    'Virement': 'Virement bancaire',
+    'Cheque_Remise': 'Chèque - Remise en main propre',
+    'Cheque_Poste': 'Chèque - Envoi postal',
+    'Cheque_Caserne': 'Chèque - Dépôt caserne'
+  };
+  return labels[paymentMode] || paymentMode || 'À définir';
+}
+
+// =====================================================
+// 🔧 VALIDATION DU MODE DE PAIEMENT
+// =====================================================
+
+function validatePaymentSelection() {
+  if (!window.selectedPayment) {
+    const paymentError = document.getElementById('payment-error');
+    if (paymentError) {
+      paymentError.style.display = 'block';
+      paymentError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+    return false;
+  }
+  return true;
+}
+
+// =====================================================
+// 🔧 INTÉGRATION AVEC LA VALIDATION GLOBALE
+// =====================================================
+
+// Redéfinir la validation avant soumission pour inclure le paiement
+const originalValidateBeforeSubmit = window.validateBeforeSubmit || window.validateDigitalSignature;
+
+window.validateBeforeSubmit = function () {
+  // Valider d'abord le mode de paiement
+  if (!validatePaymentSelection()) {
+    console.log('❌ Validation échouée: Mode de paiement manquant');
+    return false;
+  }
+
+  // Valider la signature si fonction originale existe
+  if (originalValidateBeforeSubmit && typeof originalValidateBeforeSubmit === 'function') {
+    return originalValidateBeforeSubmit();
+  }
+
+  return true;
+};
+
+// =====================================================
+// 🔧 MISE À JOUR AUTOMATIQUE DU RÉCAPITULATIF PAIEMENT
+// =====================================================
+
+// Étendre updateStep4Summary pour inclure le paiement
+const originalUpdateStep4Summary = window.updateStep4Summary;
+
+window.updateStep4Summary = function () {
+  // Appeler la fonction originale
+  if (originalUpdateStep4Summary && typeof originalUpdateStep4Summary === 'function') {
+    originalUpdateStep4Summary();
+  }
+
+  // Ajouter la mise à jour spécifique au paiement
+  const selectedPayment = getPaymentLabelDetailed(window.selectedPayment || '');
+
+  // Mettre à jour tous les éléments de paiement
+  ['summary-payment', 'locked-payment'].forEach(elementId => {
+    updateElement(elementId, selectedPayment);
+  });
+
+  console.log('💳 Récapitulatif paiement mis à jour:', selectedPayment);
+};
+
+// =====================================================
+// 🔧 INITIALISATION AUTOMATIQUE À L'ÉTAPE 4
+// =====================================================
+
+// Étendre initializeStep4Complete pour inclure le paiement
+const originalInitializeStep4Complete = window.initializeStep4Complete;
+
+window.initializeStep4Complete = function () {
+  // Appeler la fonction originale
+  if (originalInitializeStep4Complete && typeof originalInitializeStep4Complete === 'function') {
+    originalInitializeStep4Complete();
+  }
+
+  // Configurer la sélection de paiement
+  setTimeout(() => {
+    setupPaymentSelection();
+
+    // Pré-sélectionner le virement par défaut si aucun choix
+    if (!window.selectedPayment) {
+      const virementCard = document.querySelector('.payment-card[data-payment="Virement"]');
+      if (virementCard) {
+        selectPaymentMethod(virementCard);
+        console.log('💳 Virement pré-sélectionné par défaut');
+      }
+    }
+  }, 100);
+};
+
+// =====================================================
+// 🔧 FONCTIONS DE DEBUG PAIEMENT
+// =====================================================
+
+window.debugPaymentSelection = function () {
+  console.log('💳 Debug Sélection Paiement:');
+  console.log('- selectedPayment global:', window.selectedPayment);
+  console.log('- Champ selected_payment:', document.getElementById('selected_payment')?.value);
+  console.log('- Champ payment_details:', document.getElementById('payment_details')?.value);
+
+  // Vérifier les cartes
+  const selectedCard = document.querySelector('.payment-card.selected');
+  console.log('- Carte sélectionnée:', selectedCard ? selectedCard.getAttribute('data-payment') : 'AUCUNE');
+
+  // Vérifier les détails visibles
+  const visibleDetails = Array.from(document.querySelectorAll('.payment-details')).find(
+    detail => detail.style.display !== 'none'
+  );
+  console.log('- Détails visibles:', visibleDetails ? visibleDetails.id : 'AUCUN');
+
+  // Tester la validation
+  console.log('- Validation paiement:', validatePaymentSelection());
+};
+
+window.testPaymentSelection = function (paymentType) {
+  const card = document.querySelector(`.payment-card[data-payment="${paymentType}"]`);
+  if (card) {
+    selectPaymentMethod(card);
+    console.log(`✅ Test: ${paymentType} sélectionné`);
+  } else {
+    console.log(`❌ Carte ${paymentType} non trouvée`);
+  }
+};
+
+// =====================================================
+// 🔧 AUTO-INITIALISATION
+// =====================================================
+
+// Configurer dès que l'étape 4 est active
+document.addEventListener('click', function (e) {
+  // Si on navigue vers l'étape 4
+  if (e.target && e.target.id === 'next-step-3') {
+    setTimeout(() => {
+      if (window.currentStep === 4) {
+        setupPaymentSelection();
+      }
+    }, 600);
+  }
+});
+
+// Initialisation au chargement si déjà à l'étape 4
+document.addEventListener('DOMContentLoaded', function () {
+  setTimeout(() => {
+    const step4 = document.getElementById('step-4');
+    if (step4 && step4.classList.contains('active')) {
+      setupPaymentSelection();
+    }
+  }, 2000);
+});
+
+console.log('💳 Module gestion paiement chargé. Utilisez debugPaymentSelection() pour debug.');

@@ -288,6 +288,433 @@
           </div>
         </div>
 
+        <!-- 💳 SECTION MODE DE PAIEMENT À AJOUTER DANS L'ÉTAPE 4 -->
+        <!-- À insérer dans index.html APRÈS la section "signature-choice-section" et AVANT la section "electronic-signature-section" -->
+
+        <div class="payment-selection-section">
+          <h3>💳 Mode de paiement</h3>
+          <p>Choisissez votre mode de paiement préféré :</p>
+
+          <div class="payment-grid">
+            <!-- Option 1 : Virement bancaire -->
+            <div class="payment-card" data-payment="Virement" data-details="virement">
+              <div class="payment-icon">🏦</div>
+              <div class="payment-content">
+                <h4>Virement bancaire</h4>
+                <div class="payment-benefits">
+                  <div class="benefit">✅ Paiement sécurisé</div>
+                  <div class="benefit">✅ Traçabilité complète</div>
+                  <div class="benefit">✅ Pas de frais</div>
+                </div>
+                <div class="payment-process">
+                  <span class="process-badge recommended">RECOMMANDÉ</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Option 2 : Chèque - Remise en main propre -->
+            <div class="payment-card" data-payment="Cheque_Remise" data-details="cheque_remise">
+              <div class="payment-icon">🤝</div>
+              <div class="payment-content">
+                <h4>Chèque - Remise directe</h4>
+                <div class="payment-benefits">
+                  <div class="benefit">📋 À l'ordre de "ASPCH"</div>
+                  <div class="benefit">🤝 Remise en main propre</div>
+                  <div class="benefit">📍 À la caserne ou RDV</div>
+                </div>
+                <div class="payment-process">
+                  <span class="process-badge traditional">TRADITIONNEL</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Option 3 : Chèque - Envoi postal -->
+            <div class="payment-card" data-payment="Cheque_Poste" data-details="cheque_poste">
+              <div class="payment-icon">📮</div>
+              <div class="payment-content">
+                <h4>Chèque - Envoi postal</h4>
+                <div class="payment-benefits">
+                  <div class="benefit">📋 À l'ordre de "ASPCH"</div>
+                  <div class="benefit">📮 Envoi par courrier</div>
+                  <div class="benefit">📍 15 Rue Sauvignon, 34800</div>
+                </div>
+                <div class="payment-process">
+                  <span class="process-badge postal">PAR COURRIER</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Option 4 : Chèque - Dépôt caserne -->
+            <div class="payment-card" data-payment="Cheque_Caserne" data-details="cheque_caserne">
+              <div class="payment-icon">🚒</div>
+              <div class="payment-content">
+                <h4>Chèque - Dépôt caserne</h4>
+                <div class="payment-benefits">
+                  <div class="benefit">📋 À l'ordre de "ASPCH"</div>
+                  <div class="benefit">🚒 Dépôt à la caserne</div>
+                  <div class="benefit">⏰ 24h/7j dans la boîte</div>
+                </div>
+                <div class="payment-process">
+                  <span class="process-badge local">LOCAL</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Détails spécifiques par mode de paiement -->
+
+          <!-- Détails Virement -->
+          <div class="payment-details" id="virement-details" style="display: none;">
+            <div class="payment-details-box">
+              <h4>🏦 Coordonnées bancaires</h4>
+              <div class="bank-details">
+                <div class="bank-row">
+                  <span class="bank-label">IBAN :</span>
+                  <span class="bank-value">FR76 1005 7190 3500 0142 6170 134</span>
+                </div>
+                <div class="bank-row">
+                  <span class="bank-label">BIC :</span>
+                  <span class="bank-value">CMCIFRPP</span>
+                </div>
+                <div class="bank-row">
+                  <span class="bank-label">Titulaire :</span>
+                  <span class="bank-value">AMICALE DES SAPEURS POMPIERS</span>
+                </div>
+                <div class="bank-row">
+                  <span class="bank-label">Banque :</span>
+                  <span class="bank-value">CIC CLERMONT L'HÉRAULT</span>
+                </div>
+              </div>
+              <div class="bank-note">
+                <strong>Important :</strong> Indiquez votre nom d'entreprise dans le libellé du virement
+              </div>
+            </div>
+          </div>
+
+          <!-- Détails Chèque Remise -->
+          <div class="payment-details" id="cheque_remise-details" style="display: none;">
+            <div class="payment-details-box">
+              <h4>🤝 Modalités de remise</h4>
+              <div class="rdv-preferences">
+                <label for="rdv_preference">Préférence pour la remise :</label>
+                <select id="rdv_preference" name="rdv_preference">
+                  <option value="">Sélectionnez une option</option>
+                  <option value="caserne">À la caserne des sapeurs-pompiers</option>
+                  <option value="rdv_entreprise">Rendez-vous à votre entreprise</option>
+                  <option value="rdv_neutre">Rendez-vous en lieu neutre</option>
+                  <option value="contact_ulterieur">Contact ultérieur pour organisation</option>
+                </select>
+              </div>
+              <div class="cheque-note">
+                <strong>Chèque à l'ordre de :</strong> "Amicale des Sapeurs-Pompiers de Clermont l'Hérault" ou "ASPCH"
+              </div>
+            </div>
+          </div>
+
+          <!-- Détails Chèque Postal -->
+          <div class="payment-details" id="cheque_poste-details" style="display: none;">
+            <div class="payment-details-box">
+              <h4>📮 Adresse d'envoi</h4>
+              <div class="postal-address">
+                <strong>Amicale des Sapeurs-Pompiers</strong><br>
+                15 Rue Sauvignon<br>
+                34800 Clermont-l'Hérault
+              </div>
+              <div class="cheque-note">
+                <strong>Chèque à l'ordre de :</strong> "Amicale des Sapeurs-Pompiers de Clermont l'Hérault" ou "ASPCH"
+              </div>
+              <div class="postal-note">
+                <strong>Conseil :</strong> Envoi en recommandé avec accusé de réception pour sécuriser votre paiement
+              </div>
+            </div>
+          </div>
+
+          <!-- Détails Chèque Caserne -->
+          <div class="payment-details" id="cheque_caserne-details" style="display: none;">
+            <div class="payment-details-box">
+              <h4>🚒 Dépôt à la caserne</h4>
+              <div class="caserne-address">
+                <strong>Caserne des Sapeurs-Pompiers</strong><br>
+                15 Rue Sauvignon<br>
+                34800 Clermont-l'Hérault
+              </div>
+              <div class="caserne-instructions">
+                <p><strong>Boîte de dépôt disponible 24h/24, 7j/7</strong></p>
+                <p>Glissez votre chèque dans une enveloppe avec vos coordonnées dans la boîte prévue à cet effet</p>
+              </div>
+              <div class="cheque-note">
+                <strong>Chèque à l'ordre de :</strong> "Amicale des Sapeurs-Pompiers de Clermont l'Hérault" ou "ASPCH"
+              </div>
+            </div>
+          </div>
+
+          <!-- Champ caché pour stocker la sélection -->
+          <input type="hidden" id="selected_payment" name="selected_payment">
+          <input type="hidden" id="payment_details" name="payment_details">
+
+          <!-- Message d'erreur -->
+          <div class="error-message" id="payment-error" style="display: none;">
+            Veuillez sélectionner un mode de paiement
+          </div>
+        </div>
+
+        <!-- 🎨 STYLES CSS POUR LA SECTION PAIEMENT -->
+        <!-- À ajouter dans enterprise-form.css ou dans un <style> dans le <head> -->
+        <style>
+          .payment-selection-section {
+            margin: 25px 0;
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-radius: 10px;
+            border-left: 4px solid #457b9d;
+          }
+
+          .payment-selection-section h3 {
+            color: #1d3557;
+            margin-top: 0;
+            margin-bottom: 10px;
+          }
+
+          .payment-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+          }
+
+          .payment-card {
+            background: white;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            padding: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+          }
+
+          .payment-card:hover {
+            border-color: #457b9d;
+            box-shadow: 0 4px 12px rgba(69, 123, 157, 0.15);
+            transform: translateY(-2px);
+          }
+
+          .payment-card.selected {
+            border-color: #457b9d;
+            background: linear-gradient(135deg, #f1faee 0%, #e8f5e8 100%);
+            box-shadow: 0 6px 16px rgba(69, 123, 157, 0.2);
+          }
+
+          .payment-card.selected::before {
+            content: '✓';
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #457b9d;
+            color: white;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 14px;
+          }
+
+          .payment-icon {
+            font-size: 32px;
+            text-align: center;
+            margin-bottom: 10px;
+          }
+
+          .payment-content h4 {
+            margin: 0 0 10px 0;
+            color: #1d3557;
+            font-size: 16px;
+            font-weight: 600;
+          }
+
+          .payment-benefits {
+            margin-bottom: 12px;
+          }
+
+          .benefit {
+            font-size: 13px;
+            color: #495057;
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+          }
+
+          .process-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+          }
+
+          .process-badge.recommended {
+            background: #d4edda;
+            color: #155724;
+          }
+
+          .process-badge.traditional {
+            background: #fff3cd;
+            color: #856404;
+          }
+
+          .process-badge.postal {
+            background: #cce5ff;
+            color: #004085;
+          }
+
+          .process-badge.local {
+            background: #f8d7da;
+            color: #721c24;
+          }
+
+          .payment-details {
+            margin-top: 20px;
+            animation: slideDown 0.3s ease;
+          }
+
+          .payment-details-box {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+          }
+
+          .payment-details-box h4 {
+            margin-top: 0;
+            color: #1d3557;
+            border-bottom: 2px solid #457b9d;
+            padding-bottom: 8px;
+          }
+
+          .bank-details {
+            margin: 15px 0;
+          }
+
+          .bank-row {
+            display: flex;
+            margin-bottom: 8px;
+            align-items: center;
+          }
+
+          .bank-label {
+            font-weight: bold;
+            width: 100px;
+            color: #495057;
+          }
+
+          .bank-value {
+            font-family: monospace;
+            background: #f8f9fa;
+            padding: 4px 8px;
+            border-radius: 4px;
+            border: 1px solid #e9ecef;
+            font-size: 14px;
+          }
+
+          .bank-note,
+          .cheque-note,
+          .postal-note {
+            background: #e3f2fd;
+            border: 1px solid #2196f3;
+            padding: 10px;
+            border-radius: 6px;
+            margin-top: 15px;
+            font-size: 14px;
+            color: #1565c0;
+          }
+
+          .rdv-preferences {
+            margin: 15px 0;
+          }
+
+          .rdv-preferences label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: #495057;
+          }
+
+          .rdv-preferences select {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            font-size: 14px;
+            background-color: white;
+          }
+
+          .postal-address,
+          .caserne-address {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 6px;
+            padding: 12px;
+            margin: 10px 0;
+            font-size: 14px;
+            line-height: 1.5;
+          }
+
+          .caserne-instructions {
+            margin: 15px 0;
+          }
+
+          .caserne-instructions p {
+            margin: 8px 0;
+            font-size: 14px;
+            color: #495057;
+          }
+
+          @keyframes slideDown {
+            from {
+              opacity: 0;
+              transform: translateY(-10px);
+            }
+
+            to {
+              opacity: 1;
+              transform: translateY(0);
+            }
+          }
+
+          /* Mobile responsive */
+          @media (max-width: 768px) {
+            .payment-grid {
+              grid-template-columns: 1fr;
+              gap: 12px;
+            }
+
+            .payment-card {
+              padding: 12px;
+            }
+
+            .bank-row {
+              flex-direction: column;
+              align-items: flex-start;
+            }
+
+            .bank-label {
+              width: auto;
+              margin-bottom: 4px;
+            }
+
+            .bank-value {
+              width: 100%;
+              font-size: 12px;
+            }
+          }
+        </style>
+        
         <!-- 🔐 SECTION SIGNATURE ÉLECTRONIQUE (conditionnelle) -->
         <div class="electronic-signature-section" id="electronic-signature-section" style="display: block;">
           <div class="signature-validation-section">
@@ -515,4 +942,5 @@
   <script src="../assets/js/enterprise-form.js" defer></script>
   <script src="../assets/js/prefillform-enterprise.js" defer></script>
 </body>
+
 </html>
